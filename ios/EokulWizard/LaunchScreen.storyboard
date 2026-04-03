@@ -20,34 +20,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
-                        <color key="backgroundColor" systemColor="systemGreenColor"/>
-                        <subviews>
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO"
-                                   contentMode="left" horizontalHuggingPriority="251"
-                                   verticalHuggingPriority="251"
-                                   text="⚡ e-Okul Sihirbazı"
-                                   textAlignment="center"
-                                   lineBreakMode="middleTruncation"
-                                   baselineAdjustment="alignBaselines"
-                                   adjustsFontSizeToFit="NO"
-                                   translatesAutoresizingMaskIntoConstraints="NO"
-                                   id="GJd-Yh-4Ic">
-                                <rect key="frame" x="0.0" y="0.0" width="393" height="100"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="36"/>
-                                <nil key="textColor"/>
-                                <nil key="highlightedColor"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="393" id="a1b-2c-3d"/>
-                                    <constraint firstAttribute="height" constant="100" id="b2c-3d-4e"/>
-                                </constraints>
-                            </label>
-                        </subviews>
-                        <constraints>
-                            <constraint firstItem="GJd-Yh-4Ic" firstAttribute="centerX"
-                                        secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="c3d-4e-5f"/>
-                            <constraint firstItem="GJd-Yh-4Ic" firstAttribute="centerY"
-                                        secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="d4e-5f-6g"/>
-                        </constraints>
+                        <color key="backgroundColor" red="0.063" green="0.725" blue="0.506" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1"

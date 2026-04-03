@@ -28,15 +28,18 @@ workflows:
 
       - name: 🔨 iOS uygulama build (Simulator)
         script: |
+          set -o pipefail
           xcodebuild \
             -project EokulWizard.xcodeproj \
             -scheme EokulWizard \
             -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
             -configuration Debug \
             -derivedDataPath build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            build
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee build.log || (cat build.log && exit 1)
 
     artifacts:
       - build/**/*.app
