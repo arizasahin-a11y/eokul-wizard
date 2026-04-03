@@ -1,0 +1,45 @@
+name: EokulWizard
+options:
+  bundleIdPrefix: com.eokul.wizard
+  deploymentTarget:
+    iOS: "14.0"
+  xcodeVersion: "15.0"
+
+targets:
+  EokulWizard:
+    type: application
+    platform: iOS
+    deploymentTarget: "14.0"
+
+    sources:
+      - path: ios/EokulWizard
+        excludes:
+          - Info.plist
+
+    resources:
+      - path: app/src/main/assets/wizard.js
+      - path: app/src/main/assets/xlsx.full.min.js
+
+    info:
+      path: ios/EokulWizard/Info.plist
+      properties:
+        CFBundleName: e-Okul Sihirbazı
+        CFBundleDisplayName: e-Okul Sihirbazı
+        CFBundleIdentifier: com.eokul.wizard
+        CFBundleVersion: "1"
+        CFBundleShortVersionString: "3.3"
+        LSRequiresIPhoneOS: true
+        UIApplicationSupportsIndirectInputEvents: true
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.eokul.wizard
+        SWIFT_VERSION: "5.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "14.0"
+        TARGETED_DEVICE_FAMILY: "1,2"

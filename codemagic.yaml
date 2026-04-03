@@ -1,0 +1,62 @@
+workflows:
+
+  # ─────────────────────────────────────────────────────────────
+  # iOS Build (IPA)
+  # ─────────────────────────────────────────────────────────────
+  ios-build:
+    name: iOS - e-Okul Sihirbazı
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+
+    environment:
+      xcode: 15.4
+      vars:
+        BUNDLE_ID: "com.eokul.wizard"
+      # Apple Developer hesabı varsa aşağıdaki satırları doldurun:
+      # apple_signing:
+      #   distribution_certificate: Signing Certificate
+      #   provisioning_profile: Provisioning Profile
+
+    scripts:
+      - name: 📦 XcodeGen kur
+        script: |
+          brew install xcodegen || true
+
+      - name: 🏗 Xcode projesi oluştur
+        script: |
+          xcodegen generate --spec project.yml
+
+      - name: 🔨 iOS uygulama build (Simulator)
+        script: |
+          xcodebuild \
+            -project EokulWizard.xcodeproj \
+            -scheme EokulWizard \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+    artifacts:
+      - build/**/*.app
+
+  # ─────────────────────────────────────────────────────────────
+  # Android Build (APK) — mevcut proje
+  # ─────────────────────────────────────────────────────────────
+  android-build:
+    name: Android - e-Okul Sihirbazı
+    max_build_duration: 30
+    instance_type: linux_x2
+
+    environment:
+      java: 17
+
+    scripts:
+      - name: 🔨 Android APK build
+        script: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+    artifacts:
+      - app/build/outputs/apk/debug/app-debug.apk
