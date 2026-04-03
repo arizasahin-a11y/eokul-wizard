@@ -11,7 +11,8 @@
 
     let S = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || {
         active: false, mode: 'fill', excelData: [],
-        currentIndex: -1, catRange: '1', autoNextClass: true, open: true
+        currentIndex: -1, catRange: '1', autoNextClass: true,
+        autoConfirm: true, open: true
     };
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
 
@@ -102,8 +103,9 @@
     ══════════════════════════════════════════════════════════ */
     if (window.top !== window.self && !S.active) return;
 
-    // Kayıt onayla başlatmak için confirm() otomatik onayla
-    window.confirm = () => true;
+    // Kayıt onayı: autoConfirm seçiliyse otomatik onayla
+    window.confirm = (msg) => S.autoConfirm ? true : window._nativeConfirm(msg);
+    if (!window._nativeConfirm) window._nativeConfirm = window.confirm;
 
 
     /* ── Panel HTML ──────────────────────────────────────────── */
@@ -152,9 +154,14 @@
   <label class="ew-lbl">Tema No (örn: 1 veya 2-4):</label>
   <input type="text" id="ew-cat" class="ew-inp" value="${S.catRange}" style="margin-bottom:10px">
   <label style="font-size:13px;color:#94a3b8;display:flex;align-items:center;gap:8px;
-                cursor:pointer;margin-bottom:14px">
+                cursor:pointer;margin-bottom:8px">
     <input type="checkbox" id="ew-auto" ${S.autoNextClass?'checked':''} style="width:18px;height:18px">
     Şubeyi Otomatik Atla
+  </label>
+  <label style="font-size:13px;color:#94a3b8;display:flex;align-items:center;gap:8px;
+                cursor:pointer;margin-bottom:14px">
+    <input type="checkbox" id="ew-ac" ${S.autoConfirm?'checked':''} style="width:18px;height:18px">
+    Kayıt Onayını Otomatik Onayla
   </label>
 
   <!-- Eylem Butonları -->
@@ -290,6 +297,8 @@
     };
     document.getElementById('ew-cat').oninput   = e => { S.catRange=e.target.value; save(); };
     document.getElementById('ew-auto').onchange = e => { S.autoNextClass=e.target.checked; save(); };
+    document.getElementById('ew-ac').onchange   = e => { S.autoConfirm=e.target.checked; save(); };
+
     document.getElementById('ew-reset').onclick = e => {
         e.preventDefault(); localStorage.removeItem(STORAGE_KEY); location.reload();
     };
