@@ -106,9 +106,10 @@
     ══════════════════════════════════════════════════════════ */
     if (window.top !== window.self && !S.active) return;
 
-    // Kayıt onayı: autoConfirm seçiliyse otomatik onayla
-    window.confirm = (msg) => S.autoConfirm ? true : window._nativeConfirm(msg);
+    // Kayıt onayı: önce native'i sakla, sonra override et
     if (!window._nativeConfirm) window._nativeConfirm = window.confirm;
+    window.confirm = (m) => S.autoConfirm ? true : window._nativeConfirm.call(window, m);
+
 
 
     /* ── Panel HTML ──────────────────────────────────────────── */
@@ -133,9 +134,6 @@
   <select id="ew-sube" class="ew-sel"><option>Yükleniyor…</option></select>
   <label class="ew-lbl">Ders:</label>
   <select id="ew-ders" class="ew-sel"><option>Yükleniyor…</option></select>
-  <button id="ew-listele" style="width:100%;padding:12px;background:#3b82f6;color:white;
-      border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px">
-    📋 LİSTELE</button>
 
   <!-- Log -->
   <div style="background:#0f172a;padding:10px;border-radius:10px;margin-bottom:12px;font-size:12px">
@@ -174,8 +172,12 @@
     <button id="ew-stop"  class="ew-btn" style="flex:1;background:#475569;font-size:22px">⏹</button>
   </div>
   <button id="ew-clear" class="ew-btn" ${hd?'':'disabled'}
-    style="width:100%;background:${hd?'#ef4444':'#374151'};margin-bottom:10px">
+    style="width:100%;background:${hd?'#ef4444':'#374151'};margin-bottom:8px">
     🗑 ALANI TEMİZLE</button>
+  <button id="ew-devam" class="ew-btn"
+    style="display:none;width:100%;background:#7c3aed;margin-bottom:10px">
+    ➡ DEVAM ET
+  </button>
 
   <div style="text-align:right">
     <a href="#" id="ew-reset" style="color:#475569;font-size:11px;text-decoration:none">⟳ Veriyi Sıfırla</a>
@@ -256,19 +258,22 @@
         const pollSube = makePoller(
             () => document.getElementById('cmbSubeler'), 'ew-sube'
         );
-        const pollDers = makePoller(findDers, 'ew-ders');
+        const pollDers = makePoller(findDers, 'ew-ders', autoListele);
 
         pollSube(); pollDers();
         setInterval(() => { pollSube(); pollDers(); }, 500);
     }
     setTimeout(syncDropdowns, 1200);
 
-    /* ── Listele ─────────────────────────────────────────────── */
-    document.getElementById('ew-listele').onclick = () => {
-        const btn = document.querySelector('button.btn-primary.has-ripple');
-        if (btn) { btn.click(); msg('📋 Listeleniyor…'); }
-        else msg('⚠️ Listele butonu bulunamadı!');
-    };
+    /* ── Ders değişince otomatik Listele ──────────────── */
+    // makePoller içinde ew-ders için triggerChange olarak geçilecek
+    function autoListele() {
+        setTimeout(() => {
+            const btn = document.querySelector('button.btn-primary.has-ripple');
+            if (btn) { btn.click(); msg('📋 Ders seçildi, listeleniyor…'); }
+        }, 600);
+    }
+
 
     /* ── Excel ──────────────────────────────────────────────── */
     document.getElementById('ew-file').onchange = function (e) {
@@ -323,6 +328,11 @@
 
     document.getElementById('ew-reset').onclick = e => {
         e.preventDefault(); localStorage.removeItem(STORAGE_KEY); location.reload();
+    };
+
+    document.getElementById('ew-devam').onclick = () => {
+        document.getElementById('ew-devam').style.display = 'none';
+        runLoop();
     };
 
     /* ── Ana Döngü ───────────────────────────────────────────── */
@@ -404,13 +414,20 @@
         }
 
         if (changed) {
-            await wait(700);   // 1200 → 700ms
+            await wait(700);
             const kaydet = document.getElementById('OOMToolbarActive1_btnKaydet');
             if (kaydet) {
                 msg('💾 Kaydediliyor…');
                 kaydet.click();
-                // AJAX kayıt sonrası devam (sayfa yenilenmiyorsa)
-                setTimeout(runLoop, 2500);
+                if (S.autoConfirm) {
+                    // Onay otomatik — AJAX sonrası devam
+                    setTimeout(runLoop, 2500);
+                } else {
+                    // Manuel onay — '➡ DEVAM ET' butonunu göster
+                    msg('⏸ Kaydet onaylanınca ➡ DEVAM ET’e basın');
+                    const devamEl = document.getElementById('ew-devam');
+                    if (devamEl) devamEl.style.display = 'block';
+                }
             } else {
                 msg('⚠️ Kaydet butonu yok!');
                 setTimeout(runLoop, 1500);
