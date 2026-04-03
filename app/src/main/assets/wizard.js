@@ -122,7 +122,7 @@
   <!-- Şube / Ders -->
   <label class="ew-lbl" style="margin-top:0">Şube:</label>
   <select id="ew-sube" class="ew-sel"><option>Yükleniyor…</option></select>
-  <label class="ew-lbl" id="ew-ders-lbl">Ders:</label>
+  <label class="ew-lbl">Ders:</label>
   <select id="ew-ders" class="ew-sel"><option>Yükleniyor…</option></select>
   <button id="ew-listele" style="width:100%;padding:12px;background:#3b82f6;color:white;
       border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px">
@@ -195,88 +195,75 @@
         if (prev && dst.querySelector(`option[value="${prev}"]`)) dst.value = prev;
     }
 
-    // Ders select'i bul — agresif arama
+    // Yıl/Dönem select'i bul
+    function findYilDonem() {
+        return [...document.querySelectorAll('select')].find(s =>
+            !s.id.startsWith('ew-') &&
+            [...s.options].some(o => /dönem|donem|\d{4}-\d{4}/i.test(o.text))
+        );
+    }
+
+    // Ders select'i bul — agresif arama, Yıl/Dönem seçici hariç
     function findDers() {
+        function isYilDonem(s) {
+            return [...s.options].some(o => /dönem|donem|\d{4}-\d{4}/i.test(o.text));
+        }
         // 1) Bilinen ID'ler
         const ids = ['cmbDersler','ddlDers','DdlDers','cmbDers','DropDownListDers',
                      'ddlDers1','SelectDers','lstDers','dersDropDown'];
         for (const id of ids) {
             const el = document.getElementById(id);
-            if (el) return el;
+            if (el && !isYilDonem(el)) return el;
         }
-        // 2) ID'de 'ders' geçen (panel hariç)
+        // 2) ID'de 'ders' geçen (panel ve dönem hariç)
         const byId = [...document.querySelectorAll('select')].find(
-            s => /ders/i.test(s.id) && !s.id.startsWith('ew-')
+            s => /ders/i.test(s.id) && !s.id.startsWith('ew-') && !isYilDonem(s)
         );
         if (byId) return byId;
-
-        // 3) '... Seçiniz' veya 'Ders' metni içeren seçeneği olan herhangi select
+        // 3) Seçenek metninde 'ders' geçen
         const byOpt = [...document.querySelectorAll('select')].find(s =>
-            !s.id.startsWith('ew-') &&
-            s.id !== 'cmbSubeler' &&
+            !s.id.startsWith('ew-') && s.id !== 'cmbSubeler' &&
+            !isYilDonem(s) &&
             [...s.options].some(o => /ders/i.test(o.text))
         );
         if (byOpt) return byOpt;
-
-        // 4) Panel ve şube hariç sayfadaki 2. select
-        const allPage = [...document.querySelectorAll('select')].filter(
-            s => !s.id.startsWith('ew-') && s.id !== 'cmbSubeler'
-        );
-        return allPage[0] || null;
+        // 4) Panel, şube ve dönem hariç herhangi select
+        return [...document.querySelectorAll('select')].find(
+            s => !s.id.startsWith('ew-') && s.id !== 'cmbSubeler' && !isYilDonem(s)
+        ) || null;
     }
 
     function syncDropdowns() {
-        // ── Şube ────────────────────────────────────
-        const pageSube  = document.getElementById('cmbSubeler');
-        const panelSube = document.getElementById('ew-sube');
-        if (pageSube && panelSube) {
-            mirrorOpts(pageSube, panelSube);
-            panelSube.onchange = () => {
-                pageSube.value = panelSube.value;
-                pageSube.dispatchEvent(new Event('change', {bubbles:true}));
-                if (window.$?.fn?.select2) $(pageSube).trigger('change.select2');
+        // ── Ortak polling fonksiyonu ─────────────────────
+        function makePoller(getPage, panelId, triggerChange) {
+            let lastHTML = '';
+            return () => {
+                const pageSel  = getPage();
+                const panelSel = document.getElementById(panelId);
+                if (!panelSel) return;
+                if (!pageSel) return;
+                const html = pageSel.innerHTML;
+                if (html === lastHTML) return;
+                lastHTML = html;
+                mirrorOpts(pageSel, panelSel);
+                panelSel.onchange = () => {
+                    const fresh = getPage();
+                    if (!fresh) return;
+                    fresh.value = panelSel.value;
+                    fresh.dispatchEvent(new Event('change', {bubbles:true}));
+                    if (window.$?.fn?.select2) $(fresh).trigger('change.select2');
+                    if (triggerChange) triggerChange();
+                };
             };
         }
 
-        // ── Ders: 500ms polling ───────────────────────
-        let lastDersHTML = '';
-        setInterval(() => {
-            const pageDers  = findDers();
-            const panelDers = document.getElementById('ew-ders');
-            if (!panelDers) return;
+        const pollSube = makePoller(
+            () => document.getElementById('cmbSubeler'), 'ew-sube'
+        );
+        const pollDers = makePoller(findDers, 'ew-ders');
 
-            if (!pageDers) {
-                // Debug: hiçbir element bulunamadı
-                if (lastDersHTML !== 'not-found') {
-                    lastDersHTML = 'not-found';
-                    msg('⚠️ Ders kutusu bulunamadı. Sayfa select ID: '
-                        + [...document.querySelectorAll('select')]
-                            .map(s => s.id||'(ID yok)')
-                            .filter(id => !id.startsWith('ew-'))
-                            .join(', ')
-                    );
-                }
-                return;
-            }
-
-            const html = pageDers.innerHTML;
-            if (html === lastDersHTML) return;
-            lastDersHTML = html;
-
-            // Debug: hangi elementi bulduk
-            console.log('[eOkul] ders element bulundu: #' + pageDers.id +
-                        ' (' + pageDers.options.length + ' seçenek)');
-
-            mirrorOpts(pageDers, panelDers);
-
-            panelDers.onchange = () => {
-                const fresh = findDers();
-                if (!fresh) return;
-                fresh.value = panelDers.value;
-                fresh.dispatchEvent(new Event('change', {bubbles:true}));
-                if (window.$?.fn?.select2) $(fresh).trigger('change.select2');
-            };
-        }, 500);
+        pollSube(); pollDers();
+        setInterval(() => { pollSube(); pollDers(); }, 500);
     }
     setTimeout(syncDropdowns, 1200);
 
