@@ -1,0 +1,21 @@
+# Android Studio üretilen dosyalar
+.gradle/
+local.properties
+build/
+app/build/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+*.jks
+*.keystore
+*.p8
+*.p12
+
+# Navigasyon bileşen önbelleği
+app/src/main/assets/xlsx.full.min.js
+
+# IDE
+.idea/
+*.iml
