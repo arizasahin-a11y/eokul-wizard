@@ -12,7 +12,7 @@
     let S = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || {
         active: false, mode: 'fill', excelData: [],
         currentIndex: -1, catRange: '1', autoNextClass: true,
-        autoConfirm: true, open: true
+        autoConfirm: true, waiting: false, open: true
     };
     // Oturum başlangıcında excel verisini temizle (otomasyon devam etmiyorsa)
     if (!S.active) { S.excelData = []; }
@@ -75,31 +75,31 @@
         document.body.appendChild(fab);
     }
 
-    /* ── Hedef sayfa değilse: tıklayınca navigasyon ────────── */
+    /* ── Hedef sayfa değilse: tek tıkla, iki adımlı otomatik nav ── */
     if (!IS_TARGET) {
+        const OO_URL  = 'https://e-okul.meb.gov.tr/OrtaOgretim/OrtaOgretim.aspx';
+        const NAV_KEY = 'ew_goto_ook';
+
+        // OrtaOgretim sayfasındayız VE flag set edilmişse → OOK'a geç
+        if (/OrtaOgretim/i.test(window.location.href)
+                && sessionStorage.getItem(NAV_KEY) === '1') {
+            sessionStorage.removeItem(NAV_KEY);
+            window.location.replace(OOK_URL);  // hemen yönlendir
+            return;
+        }
+
+        // ⚡ tıklanınca: zaten OrtaOgretim'deyse direkt git, değilse ara sayfa
         fab.onclick = () => {
-            const href = window.location.href;
-
-            // Zaten OrtaOgretim bölümündeyse direkt hedef sayfaya git
-            if (href.includes('OrtaOgretim') || href.includes('OrtaOğretim')) {
+            if (/OrtaOgretim/i.test(window.location.href)) {
                 window.location.href = OOK_URL;
-                return;
-            }
-
-            // Sayfadaki mentü linklerinde "Gelişim" veya OrtaOğretim ara
-            const link = [...document.querySelectorAll('a[href]')].find(a =>
-                /OrtaO(g|ğ)retim/i.test(a.href) ||
-                /gelişim/i.test(a.textContent)
-            );
-            if (link) {
-                link.click();
             } else {
-                // Fallback: OrtaOğretim portaline git, oradan tekrar tıklanır
-                window.location.href = 'https://e-okul.meb.gov.tr/OrtaOgretim/OrtaOgretim.aspx';
+                sessionStorage.setItem(NAV_KEY, '1');
+                window.location.href = OO_URL;
             }
         };
         return;
     }
+
 
     /* ══════════════════════════════════════════════════════════
        HEDEF SAYFA — Tam Panel
@@ -287,7 +287,6 @@
                 const data = [];
                 for (let i=1; i<rows.length; i++) {
                     if (!rows[i][2]) continue;
-                    // Sütun 5'ten itibaren tüm numeric değerleri topla
                     const vals = [];
                     for (let c=4; c<rows[i].length; c++) {
                         const v = parseFloat(rows[i][c]);
@@ -298,8 +297,6 @@
                 }
                 S.excelData = data; S.currentIndex = -1; S.active = false;
                 save();
-
-                // Sayfa yenileme YOK — UI dinamik güncellenir
                 const colCount = data[0]?.vals.length || 0;
                 const infoEl   = document.getElementById('ew-info');
                 const startEl  = document.getElementById('ew-start');
@@ -313,11 +310,20 @@
         r.readAsBinaryString(f);
     };
 
-
     /* ── Butonlar ────────────────────────────────────────────── */
-    document.getElementById('ew-start').onclick = () => { S.active=true;  S.mode='fill';  save(); runLoop(); };
-    document.getElementById('ew-stop').onclick  = () => { S.active=false; save(); msg('⏹ Durduruldu.'); };
+    document.getElementById('ew-start').onclick = () => {
+        if (S.excelData.length === 0) { msg('⚠️ Önce Excel dosyası yükleyin!'); return; }
+        if (S.waiting) { msg('⏸ Önce ➡ DEVAM ET\'e basın!'); return; }
+        S.active = true; S.mode = 'fill'; save(); runLoop();
+    };
+    document.getElementById('ew-stop').onclick = () => {
+        S.active = false; S.waiting = false; save();
+        const devamEl = document.getElementById('ew-devam');
+        if (devamEl) devamEl.style.display = 'none';
+        msg('⏹ Durduruldu.');
+    };
     document.getElementById('ew-clear').onclick = () => {
+        if (S.excelData.length === 0) { msg('⚠️ Excel yüklenmedi!'); return; }
         if (confirm('Seçili kategorilerdeki tüm girişler SİLİNECEKTİR. Devam?')) {
             S.active=true; S.mode='clear'; save(); runLoop();
         }
@@ -331,9 +337,11 @@
     };
 
     document.getElementById('ew-devam').onclick = () => {
+        S.waiting = false; save();
         document.getElementById('ew-devam').style.display = 'none';
         runLoop();
     };
+
 
     /* ── Ana Döngü ───────────────────────────────────────────── */
     async function runLoop() {
@@ -423,8 +431,9 @@
                     // Onay otomatik — AJAX sonrası devam
                     setTimeout(runLoop, 2500);
                 } else {
-                    // Manuel onay — '➡ DEVAM ET' butonunu göster
-                    msg('⏸ Kaydet onaylanınca ➡ DEVAM ET’e basın');
+                    // Manuel onay — '➡ DEVAM ET' butonunu göster, bekle
+                    S.waiting = true; save();
+                    msg('⏸ Kaydet onaylanınca ➡ DEVAM ET\'e basın');
                     const devamEl = document.getElementById('ew-devam');
                     if (devamEl) devamEl.style.display = 'block';
                 }
