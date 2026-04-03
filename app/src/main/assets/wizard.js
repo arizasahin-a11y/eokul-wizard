@@ -193,41 +193,21 @@
         if (prev && dst.querySelector(`option[value="${prev}"]`)) dst.value = prev;
     }
 
-    // Ders select'i bul (birden fazla olası ID)
+    // Ders select'i bul — bilinen tüm olası ID'leri dener
     function findDers() {
-        return document.getElementById('cmbDersler')
-            || document.getElementById('ddlDers')
-            || [...document.querySelectorAll('select')].find(s => /ders/i.test(s.id) && s.id !== 'ew-ders');
-    }
-
-    // Ders dropdown'ı MutationObserver ile izle —
-    // sayfa AJAX ile seçenekleri değiştirdiğinde otomatik güncelle
-    let dersObserver = null;
-    function watchDers() {
-        const pageDers  = findDers();
-        const panelDers = document.getElementById('ew-ders');
-        if (!pageDers || !panelDers) return;
-
-        // İlk yansıtma
-        mirrorOpts(pageDers, panelDers);
-
-        // Kullanıcı panelden değiştirince sayfayı güncelle
-        panelDers.onchange = () => {
-            pageDers.value = panelDers.value;
-            pageDers.dispatchEvent(new Event('change', {bubbles:true}));
-            if (window.$?.fn?.select2) $(pageDers).trigger('change.select2');
-        };
-
-        // Sayfanın AJAX güncellemelerini yakala
-        if (dersObserver) dersObserver.disconnect();
-        dersObserver = new MutationObserver(() => {
-            mirrorOpts(pageDers, panelDers);
-        });
-        dersObserver.observe(pageDers, {childList: true, subtree: true});
+        const ids = ['cmbDersler','ddlDers','DdlDers','cmbDers','DropDownListDers','ders'];
+        for (const id of ids) {
+            const el = document.getElementById(id);
+            if (el) return el;
+        }
+        // ID'de 'ders' geçen herhangi bir select (panel hariç)
+        return [...document.querySelectorAll('select')].find(s =>
+            /ders/i.test(s.id) && !s.id.startsWith('ew-')
+        );
     }
 
     function syncDropdowns() {
-        // ── Şube ──────────────────────────────────────────────────
+        // ── Şube ────────────────────────────────────
         const pageSube  = document.getElementById('cmbSubeler');
         const panelSube = document.getElementById('ew-sube');
         if (pageSube && panelSube) {
@@ -239,40 +219,31 @@
             };
         }
 
-        // ── Ders ────────────────────────────────────────────────
-        // ASP.NET UpdatePanel her kısmi postback'ten sonra select elementi
-        // yeniden oluşturuyor. Bu yüzden endRequest'te yeniden bağla.
-        function attachDers() {
+        // ── Ders: 500ms polling ───────────────────────
+        // ASP.NET UpdatePanel postback sonrası DOM değişse bile
+        // en güncel elementi her 500ms'de bulup panele yansıtır.
+        let lastDersHTML = '';
+        setInterval(() => {
             const pageDers  = findDers();
             const panelDers = document.getElementById('ew-ders');
             if (!pageDers || !panelDers) return;
 
+            const html = pageDers.innerHTML;
+            if (html === lastDersHTML) return; // değişmedi, atla
+            lastDersHTML = html;
+
+            // Yeni seçenekleri panele kopyala
             mirrorOpts(pageDers, panelDers);
 
+            // Panel→Sayfa bağlantısını yenile
             panelDers.onchange = () => {
-                const fresh = findDers(); // postback sonrası yeni element
-                if (fresh) {
-                    fresh.value = panelDers.value;
-                    fresh.dispatchEvent(new Event('change', {bubbles:true}));
-                    if (window.$?.fn?.select2) $(fresh).trigger('change.select2');
-                }
+                const fresh = findDers();
+                if (!fresh) return;
+                fresh.value = panelDers.value;
+                fresh.dispatchEvent(new Event('change', {bubbles:true}));
+                if (window.$?.fn?.select2) $(fresh).trigger('change.select2');
             };
-        }
-
-        attachDers(); // ilk bağlanma
-
-        // ASP.NET UpdatePanel postback'leri bitince yeniden bağla
-        if (window.Sys?.WebForms?.PageRequestManager) {
-            const prm = Sys.WebForms.PageRequestManager.getInstance();
-            prm.add_endRequest(() => {
-                setTimeout(attachDers, 300); // DOM tamamen yerleşsin
-            });
-        } else {
-            // Fallback: şube değişince 2 sn sonra tekrar dene
-            if (pageSube) {
-                pageSube.addEventListener('change', () => setTimeout(attachDers, 2000));
-            }
-        }
+        }, 500);
     }
     setTimeout(syncDropdowns, 1200);
 
