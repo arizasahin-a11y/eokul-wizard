@@ -19,6 +19,34 @@
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
 
 
+    /* ── LİSANS SİSTEMİ ───────────────────────────────────────────── */
+    const LIC_STORE = 'eokul_lic1';
+    const _ALPHA    = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // 32 karakter
+    const _SALT     = 0x7A59;
+
+    function _licHash(body) {
+        let h = _SALT;
+        for (let c of body) { h += c.charCodeAt(0); h = (h * 31) & 0xFFFFFF; }
+        return [20,15,10,5].map(s => _ALPHA[(h>>s)&0x1F]).join('');
+    }
+    function validateLic(raw) {
+        const k = (raw||'').toUpperCase().replace(/[^A-Z2-9]/g,'');
+        if (k.length !== 16) return false;
+        return _licHash(k.slice(0,12)) === k.slice(12);
+    }
+    function isActivated() {
+        try {
+            const d = JSON.parse(localStorage.getItem(LIC_STORE)||'null');
+            return !!(d && d.ok && validateLic(d.k));
+        } catch(e) { return false; }
+    }
+    function saveLic(key) {
+        const k = key.toUpperCase().replace(/[^A-Z2-9]/g,'');
+        localStorage.setItem(LIC_STORE, JSON.stringify({ok:true, k, t:Date.now()}));
+    }
+    /* ───────────────────────────────────────────────────────────────── */
+
+
     /* ── Yardımcılar ─────────────────────────────────────────── */
     function parseRange(s) {
         const idx = new Set();
@@ -58,6 +86,73 @@
         `;
         document.head.appendChild(st);
     }
+
+    /* ── AKTİVASYON KONTROLÜ ─────────────────────────────────────── */
+    if (!isActivated()) {
+        let lockedFab = document.getElementById('ew-fab');
+        if (!lockedFab) {
+            lockedFab = document.createElement('div'); lockedFab.id='ew-fab';
+            Object.assign(lockedFab.style, {
+                position:'fixed', bottom:'20px', right:'20px',
+                width:'52px', height:'52px', zIndex:'99999999',
+                background:'linear-gradient(135deg,#475569,#334155)',
+                borderRadius:'50%', display:'flex', alignItems:'center',
+                justifyContent:'center', cursor:'pointer',
+                fontSize:'26px', userSelect:'none'
+            });
+            lockedFab.textContent = '🔒';
+            document.body.appendChild(lockedFab);
+        }
+        if (!document.getElementById('ew-lic-ov')) {
+            const ov = document.createElement('div'); ov.id='ew-lic-ov';
+            Object.assign(ov.style, {
+                display:'none', position:'fixed', inset:'0',
+                background:'rgba(0,0,0,0.88)', zIndex:'999999999',
+                alignItems:'center', justifyContent:'center'
+            });
+            ov.innerHTML = `
+              <div style="background:#1e293b;color:#f1f5f9;padding:28px 24px;border-radius:18px;
+                  box-shadow:0 20px 40px rgba(0,0,0,.8);font-family:'Segoe UI',sans-serif;
+                  width:min(300px,88vw);border:1px solid #334155;text-align:center;">
+                <div style="font-size:36px;margin-bottom:8px">⚡</div>
+                <div style="font-size:17px;font-weight:700;margin-bottom:4px">e-Okul Sihirbazı</div>
+                <div style="font-size:12px;color:#94a3b8;margin-bottom:20px">Lisans anahtarınızı girin</div>
+                <input id="ew-lic-inp" placeholder="XXXX-XXXX-XXXX-XXXX"
+                  style="width:100%;background:#0f172a;border:1px solid #475569;color:#f1f5f9;
+                         padding:10px;border-radius:8px;font-size:14px;box-sizing:border-box;
+                         text-align:center;letter-spacing:2px;margin-bottom:12px;font-family:monospace">
+                <button id="ew-lic-btn"
+                  style="width:100%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;
+                         border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;
+                         cursor:pointer;margin-bottom:10px">
+                  ✅ Aktifleştir
+                </button>
+                <div id="ew-lic-err" style="color:#ef4444;font-size:12px;min-height:16px"></div>
+                <div style="font-size:10px;color:#475569;margin-top:12px">
+                  Satın alma sonrası e-posta ile gelen anahtarı girin
+                </div>
+              </div>`;
+            document.body.appendChild(ov);
+            document.getElementById('ew-lic-btn').onclick = () => {
+                const val = document.getElementById('ew-lic-inp').value.trim();
+                if (validateLic(val)) {
+                    saveLic(val);
+                    ov.style.display = 'none';
+                    location.reload();
+                } else {
+                    document.getElementById('ew-lic-err').textContent = '❌ Geçersiz lisans anahtarı!';
+                }
+            };
+            document.getElementById('ew-lic-inp').addEventListener('keydown', e => {
+                if (e.key === 'Enter') document.getElementById('ew-lic-btn').click();
+            });
+        }
+        lockedFab.onclick = () => {
+            document.getElementById('ew-lic-ov').style.display = 'flex';
+        };
+        return; // Lisans yoksa buraya kadar — asıl uygulama çalışmaz
+    }
+    /* ───────────────────────────────────────────────────────────────── */
 
     /* ── ⚡ FAB ──────────────────────────────────────────────── */
     let fab = document.getElementById('ew-fab');
