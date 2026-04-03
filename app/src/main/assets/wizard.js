@@ -14,7 +14,10 @@
         currentIndex: -1, catRange: '1', autoNextClass: true,
         autoConfirm: true, open: true
     };
+    // Oturum başlangıcında excel verisini temizle (otomasyon devam etmiyorsa)
+    if (!S.active) { S.excelData = []; }
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
+
 
     /* ── Yardımcılar ─────────────────────────────────────────── */
     function parseRange(s) {
@@ -267,7 +270,7 @@
         else msg('⚠️ Listele butonu bulunamadı!');
     };
 
-    /* ── Excel ───────────────────────────────────────────────── */
+    /* ── Excel ──────────────────────────────────────────────── */
     document.getElementById('ew-file').onchange = function (e) {
         const f = e.target.files[0]; if (!f) return;
         msg('📂 Excel okunuyor…');
@@ -277,15 +280,34 @@
                 const wb   = XLSX.read(evt.target.result, {type:'binary'});
                 const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
                 const data = [];
-                for (let i=1;i<rows.length;i++) {
-                    if (rows[i][2]) data.push({no:rows[i][2].toString().trim(), val:parseFloat(rows[i][4])||0});
+                for (let i=1; i<rows.length; i++) {
+                    if (!rows[i][2]) continue;
+                    // Sütun 5'ten itibaren tüm numeric değerleri topla
+                    const vals = [];
+                    for (let c=4; c<rows[i].length; c++) {
+                        const v = parseFloat(rows[i][c]);
+                        vals.push(isNaN(v) ? 0 : v);
+                    }
+                    if (vals.length === 0) vals.push(0);
+                    data.push({no: rows[i][2].toString().trim(), vals});
                 }
-                S.excelData=data; S.currentIndex=-1; S.active=false;
-                save(); location.reload();
+                S.excelData = data; S.currentIndex = -1; S.active = false;
+                save();
+
+                // Sayfa yenileme YOK — UI dinamik güncellenir
+                const colCount = data[0]?.vals.length || 0;
+                const infoEl   = document.getElementById('ew-info');
+                const startEl  = document.getElementById('ew-start');
+                const clearEl  = document.getElementById('ew-clear');
+                if (infoEl) infoEl.textContent = '📋 Kayıtlı: ' + data.length + ' Öğrenci | ' + colCount + ' tema sütunu';
+                if (startEl) { startEl.disabled=false; startEl.style.background='#10b981'; }
+                if (clearEl) { clearEl.disabled=false; clearEl.style.background='#ef4444'; }
+                msg('✅ ' + data.length + ' öğrenci yüklendi. Şube/ders seçimini koruyun.');
             } catch(ex) { alert('Excel okunamadı: '+ex.message); }
         };
         r.readAsBinaryString(f);
     };
+
 
     /* ── Butonlar ────────────────────────────────────────────── */
     document.getElementById('ew-start').onclick = () => { S.active=true;  S.mode='fill';  save(); runLoop(); };
@@ -349,17 +371,8 @@
         const student = S.excelData.find(s=>s.no===sNo);
         if (S.mode==='fill' && !student) { setTimeout(runLoop, 500); return; }
 
-        /* Seviye hesapla */
-        let baseLvl=4;
-        if (S.mode==='fill') {
-            const vals=S.excelData.map(d=>d.val);
-            const min=Math.min(...vals), max=Math.max(...vals);
-            const r=max>min?(student.val-min)/(max-min):1;
-            baseLvl=r<.25?1:r<.50?2:r<.75?3:4;
-        }
-
         btnOp.click();
-        await wait(1400);  // 2200 → 1400ms
+        await wait(1400);
 
         const headers    = [...document.querySelectorAll('a.text-light')];
         const targetIdxs = parseRange(S.catRange||'1');
@@ -368,17 +381,25 @@
         for (const idx of targetIdxs) {
             if (idx>=headers.length) continue;
             const h = headers[idx];
-            if (h.classList.contains('collapsed')) { h.click(); await wait(250); }  // 500 → 250ms
+            if (h.classList.contains('collapsed')) { h.click(); await wait(250); }
             const cont = h.closest('.card')?.querySelector('.collapse');
             if (!cont) continue;
 
             if (S.mode==='fill') {
-                const lvl    = getRandLvl(baseLvl);
+                // Her tema için o sütunun min/max değerleri ile seviye hesapla
+                const colVals = S.excelData.map(d => d.vals[idx] ?? d.vals[0] ?? 0);
+                const minV    = Math.min(...colVals);
+                const maxV    = Math.max(...colVals);
+                const stuVal  = student.vals[idx] ?? student.vals[0] ?? 0;
+                const r       = maxV > minV ? (stuVal - minV) / (maxV - minV) : 1;
+                const baseLvl = r < .25 ? 1 : r < .50 ? 2 : r < .75 ? 3 : 4;
+                const lvl     = getRandLvl(baseLvl);
+                msg(`🔄 ${sNo} | Tema ${idx+1}: puan=${stuVal.toFixed(1)} min=${minV.toFixed(1)} max=${maxV.toFixed(1)} → ★${lvl}`);
                 const radios = cont.querySelectorAll(`input[type="radio"][id$="_${lvl}"]`);
                 radios.forEach(rd=>{ if(!rd.checked){ rd.click(); changed=true; }});
             } else {
                 const btns2 = [...cont.querySelectorAll('button.btn-success')].filter(b=>b.innerText.includes('Temizle'));
-                for (const b of btns2) { b.click(); await wait(100); changed=true; }  // 150 → 100ms
+                for (const b of btns2) { b.click(); await wait(100); changed=true; }
             }
         }
 
