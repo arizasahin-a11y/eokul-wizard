@@ -71,9 +71,29 @@
         document.body.appendChild(fab);
     }
 
-    /* ── Hedef sayfa değilse: tıklayınca OOK07015'e git ─────── */
+    /* ── Hedef sayfa değilse: tıklayınca navigasyon ────────── */
     if (!IS_TARGET) {
-        fab.onclick = () => { window.location.href = OOK_URL; };
+        fab.onclick = () => {
+            const href = window.location.href;
+
+            // Zaten OrtaOgretim bölümündeyse direkt hedef sayfaya git
+            if (href.includes('OrtaOgretim') || href.includes('OrtaOğretim')) {
+                window.location.href = OOK_URL;
+                return;
+            }
+
+            // Sayfadaki mentü linklerinde "Gelişim" veya OrtaOğretim ara
+            const link = [...document.querySelectorAll('a[href]')].find(a =>
+                /OrtaO(g|ğ)retim/i.test(a.href) ||
+                /gelişim/i.test(a.textContent)
+            );
+            if (link) {
+                link.click();
+            } else {
+                // Fallback: OrtaOğretim portaline git, oradan tekrar tıklanır
+                window.location.href = 'https://e-okul.meb.gov.tr/OrtaOgretim/OrtaOgretim.aspx';
+            }
+        };
         return;
     }
 
@@ -207,7 +227,7 @@
     }
 
     function syncDropdowns() {
-        // Şube
+        // ── Şube ──────────────────────────────────────────────────
         const pageSube  = document.getElementById('cmbSubeler');
         const panelSube = document.getElementById('ew-sube');
         if (pageSube && panelSube) {
@@ -216,13 +236,43 @@
                 pageSube.value = panelSube.value;
                 pageSube.dispatchEvent(new Event('change', {bubbles:true}));
                 if (window.$?.fn?.select2) $(pageSube).trigger('change.select2');
-                // Şube değişince ders seçenekleri AJAX ile gelecek;
-                // observer zaten izliyor, ama 2 sn sonra da kontrol et
-                setTimeout(watchDers, 2000);
             };
         }
-        // Ders (ilk kurulum)
-        watchDers();
+
+        // ── Ders ────────────────────────────────────────────────
+        // ASP.NET UpdatePanel her kısmi postback'ten sonra select elementi
+        // yeniden oluşturuyor. Bu yüzden endRequest'te yeniden bağla.
+        function attachDers() {
+            const pageDers  = findDers();
+            const panelDers = document.getElementById('ew-ders');
+            if (!pageDers || !panelDers) return;
+
+            mirrorOpts(pageDers, panelDers);
+
+            panelDers.onchange = () => {
+                const fresh = findDers(); // postback sonrası yeni element
+                if (fresh) {
+                    fresh.value = panelDers.value;
+                    fresh.dispatchEvent(new Event('change', {bubbles:true}));
+                    if (window.$?.fn?.select2) $(fresh).trigger('change.select2');
+                }
+            };
+        }
+
+        attachDers(); // ilk bağlanma
+
+        // ASP.NET UpdatePanel postback'leri bitince yeniden bağla
+        if (window.Sys?.WebForms?.PageRequestManager) {
+            const prm = Sys.WebForms.PageRequestManager.getInstance();
+            prm.add_endRequest(() => {
+                setTimeout(attachDers, 300); // DOM tamamen yerleşsin
+            });
+        } else {
+            // Fallback: şube değişince 2 sn sonra tekrar dene
+            if (pageSube) {
+                pageSube.addEventListener('change', () => setTimeout(attachDers, 2000));
+            }
+        }
     }
     setTimeout(syncDropdowns, 1200);
 
