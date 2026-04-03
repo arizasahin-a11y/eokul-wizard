@@ -59,7 +59,7 @@
         document.head.appendChild(st);
     }
 
-    /* ── ⚡ FAB (her sayfada) ─────────────────────────────────── */
+    /* ── ⚡ FAB ──────────────────────────────────────────────── */
     let fab = document.getElementById('ew-fab');
     if (!fab) {
         fab = document.createElement('div'); fab.id='ew-fab';
@@ -121,9 +121,29 @@
     box-shadow:0 20px 40px rgba(0,0,0,.65);font-family:'Segoe UI',sans-serif;
     width:min(318px,90vw);border:1px solid #334155;">
 
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <span style="font-size:16px;font-weight:600">⚡ e-Okul Sihirbazı v3.3</span>
-    <button id="ew-close" style="background:none;border:none;color:#64748b;font-size:22px;cursor:pointer;line-height:1">×</button>
+  <!-- Başlık -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <span style="font-size:15px;font-weight:700">⚡ e-Okul Sihirbazı</span>
+    <span style="font-size:10px;color:#7c3aed;font-weight:700;letter-spacing:1px">@rız@</span>
+    <div style="display:flex;gap:6px">
+      <button id="ew-help-btn" title="Yardım" style="background:none;border:1px solid #475569;border-radius:50%;color:#94a3b8;font-size:13px;cursor:pointer;width:26px;height:26px;line-height:1">?</button>
+      <button id="ew-close" style="background:none;border:none;color:#64748b;font-size:22px;cursor:pointer;line-height:1">×</button>
+    </div>
+  </div>
+
+  <!-- Yardım Paneli (gizli) -->
+  <div id="ew-help" style="display:none;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:10px;font-size:11px;color:#94a3b8;line-height:1.8">
+    <b style="color:#f1f5f9;font-size:12px">📚 Kullanım Kılavuzu</b><br>
+    <b style="color:#10b981">1. Excel:</b> C=Öğrenci No, E→…=Tema puanları<br>
+    <b style="color:#10b981">2. Şube &amp; Ders seç:</b> Otomatik listelenir.<br>
+    <b style="color:#10b981">3. Excel yükle:</b> Dosya seç butonuyla.<br>
+    <b style="color:#10b981">4. Tema No:</b> "1" veya "2-4" formatında.<br>
+    <b style="color:#10b981">5. BAŞLAT:</b> Sırayla işler &amp; kaydeder.<br>
+    <hr style="border-color:#334155;margin:6px 0">
+    <b style="color:#f59e0b">⏸ DURAKLAT:</b> Mevcut öğrenci biter, bekler.<br>
+    <b style="color:#7c3aed">➡ DEVAM ET</b> (mor): Manuel onay sonrası.<br>
+    <b style="color:#ef4444">🗑 TEMİZLE:</b> Şubenin tüm girilerini siler.<br>
+    <b style="color:#475569">⏹ DURDUR:</b> Her şeyi sıfırlar.
   </div>
 
   <!-- Şube / Ders -->
@@ -196,6 +216,11 @@
     }
     fab.onclick = togglePanel;
     document.getElementById('ew-close').onclick = togglePanel;
+    document.getElementById('ew-help-btn').onclick = () => {
+        const h = document.getElementById('ew-help');
+        if (h) h.style.display = h.style.display === 'none' ? 'block' : 'none';
+    };
+
 
     /* ── Dropdown Senkronu ───────────────────────────────────── */
 
@@ -412,8 +437,8 @@
                     loopBusy=false;
                     setTimeout(()=>{
                         document.querySelector('button.btn-primary.has-ripple')?.click();
-                        setTimeout(runLoop, 3000);
-                    }, 800);
+                        setTimeout(runLoop, 1800);
+                    }, 400);
                     return;
                 }
             }
@@ -431,13 +456,13 @@
         msg(`🔄 ${sNo} No — işlem başlıyor…`);
 
         const student = S.excelData.find(s=>s.no===sNo);
-        if (S.mode==='fill' && !student) { loopBusy=false; setTimeout(runLoop, 500); return; }
+        if (S.mode==='fill' && !student) { loopBusy=false; setTimeout(runLoop, 200); return; }
 
         btnOp.click();
 
         // İçerik yüklenene kadar bekle (maks 4sn)
-        for (let w=0; w<8; w++) {
-            await wait(300);
+        for (let w=0; w<6; w++) {
+            await wait(200);
             if (document.querySelectorAll('input[type="radio"]').length > 0) break;
         }
 
@@ -512,18 +537,18 @@
         }
 
         if (changed) {
-            await wait(700);
+            await wait(400);
             const kaydet = document.getElementById('OOMToolbarActive1_btnKaydet')
                         || document.querySelector('button[id*="btnKaydet"]')
                         || document.querySelector('input[id*="btnKaydet"]');
             if (kaydet) {
                 msg('💾 Kaydediliyor…');
                 kaydet.click();
-                await wait(600);
+                await wait(300);
                 autoModalClick();
-                loopBusy = false;  // serbest bırak — sonraki çağrı girebilir
+                loopBusy = false;
                 if (S.autoConfirm) {
-                    setTimeout(runLoop, 2500);
+                    setTimeout(runLoop, 1400);
                 } else {
                     S.waiting = true; save();
                     msg('⏸ Kaydet onaylanınca ➡ DEVAM ET\'e basın');
@@ -533,18 +558,18 @@
             } else {
                 msg('⚠️ Kaydet butonu bulunamadı!');
                 loopBusy = false;
-                setTimeout(runLoop, 1500);
+                setTimeout(runLoop, 700);
             }
         } else {
             msg('ℹ️ Değişiklik yok.');
             loopBusy = false;
-            setTimeout(runLoop, 800);
+            setTimeout(runLoop, 350);
         }
 
     }
 
     /* ── Oto-devam (sayfa yenileme sonrası) ──────────────────── */
-    const resume = () => { if (S.active && S.excelData.length>0) setTimeout(runLoop, 3000); };
+    const resume = () => { if (S.active && S.excelData.length>0) setTimeout(runLoop, 1800); };
     if (document.readyState==='complete') resume();
     else window.addEventListener('load', resume);
 

@@ -3,6 +3,7 @@ package com.eokul.wizard;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
@@ -23,7 +24,7 @@ public class MainActivity extends Activity {
 
     private static final String TAG = "EokulWizard";
     private static final int FILE_CHOOSER_REQUEST = 1001;
-    private static final String EOKUL_URL = "https://e-okul.meb.gov.tr/";
+    private static final String EOKUL_URL = "https://e-okul.meb.gov.tr/giris.aspx";
 
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
@@ -65,31 +66,62 @@ public class MainActivity extends Activity {
         webView.setWebChromeClient(new EokulWebChromeClient());
     }
 
+    // e-okul sayfası mı?
+    private boolean isEokulPage(String url) {
+        return url != null && url.contains("e-okul.meb.gov.tr");
+    }
+
     // ─── WebViewClient ───────────────────────────────────────────────────────
 
+    // Sayfa yüklenmeye başlar başlamaz ⚡ FAB'ı göster
+    private static final String EARLY_FAB =
+        "(function(){" +
+        "  if(document.getElementById('ew-fab')) return;" +
+        "  function mk(){" +
+        "    var f=document.createElement('div');f.id='ew-fab';" +
+        "    Object.assign(f.style,{position:'fixed',bottom:'20px',right:'20px'," +
+        "      width:'52px',height:'52px',zIndex:'99999999'," +
+        "      background:'linear-gradient(135deg,#10b981,#059669)'," +
+        "      borderRadius:'50%',display:'flex',alignItems:'center'," +
+        "      justifyContent:'center',fontSize:'26px',userSelect:'none'," +
+        "      cursor:'pointer'});" +
+        "    f.textContent='\u26a1';document.body.appendChild(f);" +
+        "  }" +
+        "  if(document.body) mk();" +
+        "  else document.addEventListener('DOMContentLoaded',mk);" +
+        "})();";
+
     private class EokulWebViewClient extends WebViewClient {
+
+        @Override
+        public void onPageStarted(WebView view, String url, Bitmap favicon) {
+            super.onPageStarted(view, url, favicon);
+            if (isEokulPage(url)) {
+                view.evaluateJavascript(EARLY_FAB, null);
+            }
+        }
 
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
             Log.d(TAG, "onPageFinished: " + url);
-            if (url != null && url.contains("e-okul.meb.gov.tr")) {
+            if (isEokulPage(url)) {
                 injectScripts(view);
             }
         }
 
         @Override
         public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-            // e-okul bazen sertifika uyarısı verir; geçiyoruz
             Log.w(TAG, "SSL error bypassed: " + error);
             handler.proceed();
         }
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            return false; // Tüm URL'leri WebView'de aç
+            return false;
         }
     }
+
 
     // ─── WebChromeClient ─────────────────────────────────────────────────────
 
