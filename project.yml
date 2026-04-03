@@ -3,7 +3,7 @@ options:
   bundleIdPrefix: com.eokul.wizard
   deploymentTarget:
     iOS: "14.0"
-  xcodeVersion: "15.0"
+  xcodeVersion: "14.0"
 
 targets:
   EokulWizard:
@@ -15,6 +15,7 @@ targets:
       - path: ios/EokulWizard
         excludes:
           - Info.plist
+          - "*.storyboard"
 
     resources:
       - path: app/src/main/assets/wizard.js
@@ -32,6 +33,7 @@ targets:
         UIApplicationSupportsIndirectInputEvents: true
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
+        UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
