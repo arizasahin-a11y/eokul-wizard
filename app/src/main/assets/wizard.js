@@ -134,9 +134,11 @@
     <div id="ew-log" style="color:#94a3b8;font-size:11px;margin-top:5px">Bekleniyor…</div>
   </div>
 
-  <!-- Excel -->
-  <div id="ew-setup" style="${hd?'display:none;':''}margin-bottom:12px">
-    <label class="ew-lbl" style="margin-top:0">Excel Dosyası (.xlsx/.xls):</label>
+  <!-- Excel — HER ZAMAN GÖRÜİR -->
+  <div style="margin-bottom:12px">
+    <label class="ew-lbl" style="margin-top:0">
+      ${hd?'📊 Excel Değiştir:':'📂 Excel Dosyası (.xlsx/.xls):'}
+    </label>
     <input type="file" id="ew-file" accept=".xlsx,.xls"
       style="font-size:12px;width:100%;background:#0f172a;border:1px solid #475569;
              color:#f1f5f9;padding:9px;border-radius:8px;box-sizing:border-box">
@@ -193,17 +195,34 @@
         if (prev && dst.querySelector(`option[value="${prev}"]`)) dst.value = prev;
     }
 
-    // Ders select'i bul — bilinen tüm olası ID'leri dener
+    // Ders select'i bul — agresif arama
     function findDers() {
-        const ids = ['cmbDersler','ddlDers','DdlDers','cmbDers','DropDownListDers','ders'];
+        // 1) Bilinen ID'ler
+        const ids = ['cmbDersler','ddlDers','DdlDers','cmbDers','DropDownListDers',
+                     'ddlDers1','SelectDers','lstDers','dersDropDown'];
         for (const id of ids) {
             const el = document.getElementById(id);
             if (el) return el;
         }
-        // ID'de 'ders' geçen herhangi bir select (panel hariç)
-        return [...document.querySelectorAll('select')].find(s =>
-            /ders/i.test(s.id) && !s.id.startsWith('ew-')
+        // 2) ID'de 'ders' geçen (panel hariç)
+        const byId = [...document.querySelectorAll('select')].find(
+            s => /ders/i.test(s.id) && !s.id.startsWith('ew-')
         );
+        if (byId) return byId;
+
+        // 3) '... Seçiniz' veya 'Ders' metni içeren seçeneği olan herhangi select
+        const byOpt = [...document.querySelectorAll('select')].find(s =>
+            !s.id.startsWith('ew-') &&
+            s.id !== 'cmbSubeler' &&
+            [...s.options].some(o => /ders/i.test(o.text))
+        );
+        if (byOpt) return byOpt;
+
+        // 4) Panel ve şube hariç sayfadaki 2. select
+        const allPage = [...document.querySelectorAll('select')].filter(
+            s => !s.id.startsWith('ew-') && s.id !== 'cmbSubeler'
+        );
+        return allPage[0] || null;
     }
 
     function syncDropdowns() {
@@ -220,22 +239,36 @@
         }
 
         // ── Ders: 500ms polling ───────────────────────
-        // ASP.NET UpdatePanel postback sonrası DOM değişse bile
-        // en güncel elementi her 500ms'de bulup panele yansıtır.
         let lastDersHTML = '';
         setInterval(() => {
             const pageDers  = findDers();
             const panelDers = document.getElementById('ew-ders');
-            if (!pageDers || !panelDers) return;
+            if (!panelDers) return;
+
+            if (!pageDers) {
+                // Debug: hiçbir element bulunamadı
+                if (lastDersHTML !== 'not-found') {
+                    lastDersHTML = 'not-found';
+                    msg('⚠️ Ders kutusu bulunamadı. Sayfa select ID: '
+                        + [...document.querySelectorAll('select')]
+                            .map(s => s.id||'(ID yok)')
+                            .filter(id => !id.startsWith('ew-'))
+                            .join(', ')
+                    );
+                }
+                return;
+            }
 
             const html = pageDers.innerHTML;
-            if (html === lastDersHTML) return; // değişmedi, atla
+            if (html === lastDersHTML) return;
             lastDersHTML = html;
 
-            // Yeni seçenekleri panele kopyala
+            // Debug: hangi elementi bulduk
+            console.log('[eOkul] ders element bulundu: #' + pageDers.id +
+                        ' (' + pageDers.options.length + ' seçenek)');
+
             mirrorOpts(pageDers, panelDers);
 
-            // Panel→Sayfa bağlantısını yenile
             panelDers.onchange = () => {
                 const fresh = findDers();
                 if (!fresh) return;
