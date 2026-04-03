@@ -215,8 +215,7 @@
             return () => {
                 const pageSel  = getPage();
                 const panelSel = document.getElementById(panelId);
-                if (!panelSel) return;
-                if (!pageSel) return;
+                if (!panelSel || !pageSel) return;
                 const html = pageSel.innerHTML;
                 if (html === lastHTML) return;
                 lastHTML = html;
@@ -224,13 +223,21 @@
                 panelSel.onchange = () => {
                     const fresh = getPage();
                     if (!fresh) return;
-                    fresh.value = panelSel.value;
-                    fresh.dispatchEvent(new Event('change', {bubbles:true}));
-                    if (window.$?.fn?.select2) $(fresh).trigger('change.select2');
+                    const val = panelSel.value;
+                    if (window.$ && window.$.fn && window.$.fn.select2
+                            && $(fresh).data('select2')) {
+                        // Select2 bağlı: jQuery üzerinden değer ata
+                        $(fresh).val(val).trigger('change');
+                    } else {
+                        // Standart select
+                        fresh.value = val;
+                        fresh.dispatchEvent(new Event('change', {bubbles: true}));
+                    }
                     if (triggerChange) triggerChange();
                 };
             };
         }
+
 
         const pollSube = makePoller(
             () => document.getElementById('cmbSubeler'), 'ew-sube'
