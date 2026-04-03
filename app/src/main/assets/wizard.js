@@ -12,7 +12,7 @@
     let S = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || {
         active: false, mode: 'fill', excelData: [],
         currentIndex: -1, catRange: '1', autoNextClass: true,
-        autoConfirm: true, waiting: false, open: true
+        autoConfirm: true, waiting: false, paused: false, open: true
     };
     // Oturum başlangıcında excel verisini temizle (otomasyon devam etmiyorsa)
     if (!S.active) { S.excelData = []; }
@@ -75,31 +75,28 @@
         document.body.appendChild(fab);
     }
 
-    /* ── Hedef sayfa değilse: tek tıkla, iki adımlı otomatik nav ── */
+    /* ── Hedef sayfa değilse: tek tıkla, otomatik iki adımlı nav ── */
     if (!IS_TARGET) {
-        const OO_URL  = 'https://e-okul.meb.gov.tr/OrtaOgretim/OrtaOgretim.aspx';
-        const NAV_KEY = 'ew_goto_ook';
+        const OO_URL = 'https://e-okul.meb.gov.tr/OrtaOgretim/OrtaOgretim.aspx';
 
-        // OrtaOgretim sayfasındayız VE flag set edilmişse → OOK'a geç
-        if (/OrtaOgretim/i.test(window.location.href)
-                && sessionStorage.getItem(NAV_KEY) === '1') {
-            sessionStorage.removeItem(NAV_KEY);
-            window.location.replace(OOK_URL);  // hemen yönlendir
+        // window.name sayfa geçişlerinde korunur (sessionStorage'dan güvenilir)
+        if (window.name === 'ew_nav') {
+            window.name = '';
+            window.location.href = OOK_URL;  // 2. adım: OOK'a geç
             return;
         }
 
-        // ⚡ tıklanınca: zaten OrtaOgretim'deyse direkt git, değilse ara sayfa
         fab.onclick = () => {
-            if (/OrtaOgretim/i.test(window.location.href)) {
-                window.location.href = OOK_URL;
-            } else {
-                sessionStorage.setItem(NAV_KEY, '1');
-                window.location.href = OO_URL;
-            }
+            window.name = 'ew_nav';  // flag: sonraki sayfada OOK'a git
+            // Önce sayfadaki OrtaÖğretim linkini bul, yoksa hardcode URL
+            const link = [...document.querySelectorAll('a[href]')].find(a =>
+                /OrtaO[gğ]retim/i.test(a.href) && !a.href.includes('OKL')
+            );
+            if (link) { link.click(); }
+            else { window.location.href = OO_URL; }
         };
         return;
     }
-
 
     /* ══════════════════════════════════════════════════════════
        HEDEF SAYFA — Tam Panel
@@ -169,11 +166,11 @@
   <div style="display:flex;gap:8px;margin-bottom:8px">
     <button id="ew-start" class="ew-btn" ${hd?'':'disabled'}
       style="flex:2;background:${hd?'#10b981':'#374151'}">▶ BAŞLAT</button>
-    <button id="ew-stop"  class="ew-btn" style="flex:1;background:#475569;font-size:22px">⏹</button>
+    <button id="ew-stop" class="ew-btn" style="flex:1;background:#475569;font-size:22px">⏹</button>
   </div>
   <button id="ew-clear" class="ew-btn" ${hd?'':'disabled'}
     style="width:100%;background:${hd?'#ef4444':'#374151'};margin-bottom:8px">
-    🗑 ALANI TEMİZLE</button>
+    🗑 TEMİZLE</button>
   <button id="ew-devam" class="ew-btn"
     style="display:none;width:100%;background:#7c3aed;margin-bottom:10px">
     ➡ DEVAM ET
@@ -302,7 +299,7 @@
                 const startEl  = document.getElementById('ew-start');
                 const clearEl  = document.getElementById('ew-clear');
                 if (infoEl) infoEl.textContent = '📋 Kayıtlı: ' + data.length + ' Öğrenci | ' + colCount + ' tema sütunu';
-                if (startEl) { startEl.disabled=false; startEl.style.background='#10b981'; }
+                if (startEl) { updateStartBtn(); }
                 if (clearEl) { clearEl.disabled=false; clearEl.style.background='#ef4444'; }
                 msg('✅ ' + data.length + ' öğrenci yüklendi. Şube/ders seçimini koruyun.');
             } catch(ex) { alert('Excel okunamadı: '+ex.message); }
@@ -310,22 +307,60 @@
         r.readAsBinaryString(f);
     };
 
-    /* ── Butonlar ────────────────────────────────────────────── */
+    /* ── Başlat / Duraklat / Devam Et yardımcısı ────────── */
+    function updateStartBtn() {
+        const btn = document.getElementById('ew-start');
+        if (!btn) return;
+        if (!S.active) {
+            btn.textContent = '▶ BAŞLAT';
+            btn.style.background = S.excelData.length ? '#10b981' : '#374151';
+            btn.disabled = !S.excelData.length;
+        } else if (S.paused) {
+            btn.textContent = '▶ DEVAM ET';
+            btn.style.background = '#f59e0b';
+            btn.disabled = false;
+        } else {
+            btn.textContent = '⏸ DURAKLAT';
+            btn.style.background = '#3b82f6';
+            btn.disabled = false;
+        }
+    }
+
+    /* ── Butonlar ───────────────────────────────────────────── */
     document.getElementById('ew-start').onclick = () => {
-        if (S.excelData.length === 0) { msg('⚠️ Önce Excel dosyası yükleyin!'); return; }
-        if (S.waiting) { msg('⏸ Önce ➡ DEVAM ET\'e basın!'); return; }
-        S.active = true; S.mode = 'fill'; save(); runLoop();
+        if (!S.active) {
+            // BAŞLAT
+            if (S.excelData.length === 0) { msg('⚠️ Önce Excel dosyası yükleyin!'); return; }
+            if (S.waiting) { msg('⏸ Önce ➡ DEVAM ET\'e basın!'); return; }
+            S.active = true; S.paused = false;
+            S.currentIndex = -1; loopBusy = false;
+            save(); updateStartBtn(); runLoop();
+        } else if (!S.paused) {
+            // DURAKLAT
+            S.paused = true; save(); updateStartBtn();
+            msg('⏸ Duraklatıldı. Devam etmek için tekrar basın.');
+        } else {
+            // DEVAM ET
+            S.paused = false; loopBusy = false; save(); updateStartBtn();
+            msg('▶ Devam ediliyor…');
+            runLoop();
+        }
     };
     document.getElementById('ew-stop').onclick = () => {
-        S.active = false; S.waiting = false; save();
+        S.active = false; S.paused = false; S.waiting = false;
+        loopBusy = false; save();
         const devamEl = document.getElementById('ew-devam');
         if (devamEl) devamEl.style.display = 'none';
+        updateStartBtn();
         msg('⏹ Durduruldu.');
     };
     document.getElementById('ew-clear').onclick = () => {
         if (S.excelData.length === 0) { msg('⚠️ Excel yüklenmedi!'); return; }
         if (confirm('Seçili kategorilerdeki tüm girişler SİLİNECEKTİR. Devam?')) {
-            S.active=true; S.mode='clear'; save(); runLoop();
+            S.active=true; S.mode='clear';
+            S.currentIndex = -1;
+            loopBusy = false;
+            save(); runLoop();
         }
     };
     document.getElementById('ew-cat').oninput   = e => { S.catRange=e.target.value; save(); };
@@ -337,23 +372,26 @@
     };
 
     document.getElementById('ew-devam').onclick = () => {
-        S.waiting = false; save();
+        S.waiting = false; loopBusy = false; save();
         document.getElementById('ew-devam').style.display = 'none';
         runLoop();
     };
 
 
     /* ── Ana Döngü ───────────────────────────────────────────── */
+    let loopBusy = false;  // çakışan çağrıları önler
     async function runLoop() {
-        if (!S.active) return;
+        if (loopBusy || !S.active || S.paused) return;
+        loopBusy = true;
+
 
         const btns = [...document.querySelectorAll('button[id^="btnOpen"]')];
         const rows = btns.map(b=>b.closest('tr')).filter(Boolean);
 
         if (!rows.length) {
             const lb = document.querySelector('button.btn-primary.has-ripple');
-            if (lb) { lb.click(); setTimeout(runLoop, 3000); return; }
-            msg('❌ Liste yüklenemedi.'); return;
+            if (lb) { loopBusy=false; lb.click(); setTimeout(runLoop, 3000); return; }
+            msg('❌ Liste yüklenemedi.'); loopBusy=false; return;
         }
 
         S.currentIndex++;
@@ -361,6 +399,7 @@
         /* Şube bitti */
         if (S.currentIndex >= rows.length) {
             if (S.autoNextClass) {
+
                 const sel = document.getElementById('cmbSubeler');
                 if (sel && sel.selectedIndex < sel.options.length-1) {
                     sel.selectedIndex++;
@@ -370,6 +409,7 @@
                     const pd = document.getElementById('ew-sube');
                     if (pd) pd.selectedIndex = sel.selectedIndex;
                     S.currentIndex=-1; save();
+                    loopBusy=false;
                     setTimeout(()=>{
                         document.querySelector('button.btn-primary.has-ripple')?.click();
                         setTimeout(runLoop, 3000);
@@ -377,7 +417,11 @@
                     return;
                 }
             }
-            msg('✅ TAMAMLANDI! 🏁'); S.active=false; save(); return;
+            // Temizle modunda sadece mevcut sınıf temizlenir, sonrakine geçilmez
+            msg(S.mode==='clear' ? '✅ Sınıf temizlendi! 🏁' : '✅ TAMAMLANDI! 🏁');
+            S.active=false; S.paused=false; loopBusy=false; save();
+            updateStartBtn();
+            return;
         }
 
         const tr    = rows[S.currentIndex];
@@ -387,7 +431,7 @@
         msg(`🔄 ${sNo} No — işlem başlıyor…`);
 
         const student = S.excelData.find(s=>s.no===sNo);
-        if (S.mode==='fill' && !student) { setTimeout(runLoop, 500); return; }
+        if (S.mode==='fill' && !student) { loopBusy=false; setTimeout(runLoop, 500); return; }
 
         btnOp.click();
         await wait(1400);
@@ -395,6 +439,20 @@
         const headers    = [...document.querySelectorAll('a.text-light')];
         const targetIdxs = parseRange(S.catRange||'1');
         let changed      = false;
+
+        // Modal/diyalog otomatik onaylama
+        function autoModalClick() {
+            if (!S.autoConfirm) return false;
+            // Bootstrap modal OK/Evet butonu
+            const mbtn = document.querySelector(
+                '.modal.show .btn-primary, .modal.show .btn-success, .modal.show .btn-danger, .modal.show button[data-dismiss]'
+            );
+            if (mbtn) { mbtn.click(); return true; }
+            // SweetAlert
+            const sbtn = document.querySelector('.swal2-confirm, .swal-button--confirm');
+            if (sbtn) { sbtn.click(); return true; }
+            return false;
+        }
 
         for (const idx of targetIdxs) {
             if (idx>=headers.length) continue;
@@ -416,35 +474,53 @@
                 const radios = cont.querySelectorAll(`input[type="radio"][id$="_${lvl}"]`);
                 radios.forEach(rd=>{ if(!rd.checked){ rd.click(); changed=true; }});
             } else {
-                const btns2 = [...cont.querySelectorAll('button.btn-success')].filter(b=>b.innerText.includes('Temizle'));
-                for (const b of btns2) { b.click(); await wait(100); changed=true; }
+                // Temizle: öğrenci satırında veya tema içinde en sağtaki Temizle butonu
+                const temizleBtns = [
+                    // Tema accordion içindeki Temizle butonları
+                    ...cont.querySelectorAll('button'),
+                    // Öğrenci satırındaı tüm butonlar
+                    ...tr.querySelectorAll('button')
+                ].filter(b => /temizle/i.test(b.textContent || b.innerText));
+                for (const b of temizleBtns) {
+                    b.click();
+                    await wait(200);
+                    autoModalClick();  // Temizle sonrası onay
+                    await wait(100);
+                    changed = true;
+                }
             }
         }
 
         if (changed) {
             await wait(700);
-            const kaydet = document.getElementById('OOMToolbarActive1_btnKaydet');
+            const kaydet = document.getElementById('OOMToolbarActive1_btnKaydet')
+                        || document.querySelector('button[id*="btnKaydet"]')
+                        || document.querySelector('input[id*="btnKaydet"]');
             if (kaydet) {
                 msg('💾 Kaydediliyor…');
                 kaydet.click();
+                await wait(600);
+                autoModalClick();
+                loopBusy = false;  // serbest bırak — sonraki çağrı girebilir
                 if (S.autoConfirm) {
-                    // Onay otomatik — AJAX sonrası devam
                     setTimeout(runLoop, 2500);
                 } else {
-                    // Manuel onay — '➡ DEVAM ET' butonunu göster, bekle
                     S.waiting = true; save();
                     msg('⏸ Kaydet onaylanınca ➡ DEVAM ET\'e basın');
                     const devamEl = document.getElementById('ew-devam');
                     if (devamEl) devamEl.style.display = 'block';
                 }
             } else {
-                msg('⚠️ Kaydet butonu yok!');
+                msg('⚠️ Kaydet butonu bulunamadı!');
+                loopBusy = false;
                 setTimeout(runLoop, 1500);
             }
         } else {
             msg('ℹ️ Değişiklik yok.');
-            setTimeout(runLoop, 800);  // 1200 → 800ms
+            loopBusy = false;
+            setTimeout(runLoop, 800);
         }
+
     }
 
     /* ── Oto-devam (sayfa yenileme sonrası) ──────────────────── */
