@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ e-Okul Gelişim Düzeyi Sihirbazı</title>
+<meta name="description" content="e-Okul'a Excel'den otomatik Gelişim Düzeyi girişi. Saatler süren işlemi dakikalara indirin. Android uygulama, ₺100.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:#0f172a;color:#f1f5f9;line-height:1.6}
+
+  /* Hero */
+  .hero{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+        padding:60px 20px;text-align:center;border-bottom:1px solid #1e293b}
+  .badge{display:inline-block;background:#10b981;color:#fff;font-size:11px;
+         font-weight:700;letter-spacing:1px;padding:4px 12px;border-radius:20px;
+         margin-bottom:20px;text-transform:uppercase}
+  .hero h1{font-size:clamp(28px,5vw,48px);font-weight:800;margin-bottom:12px;
+           background:linear-gradient(135deg,#10b981,#3b82f6);
+           -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p{font-size:clamp(14px,2.5vw,18px);color:#94a3b8;max-width:560px;
+          margin:0 auto 32px}
+  .price-box{background:#1e293b;border:2px solid #10b981;border-radius:16px;
+             display:inline-block;padding:20px 40px;margin-bottom:32px}
+  .price-box .amount{font-size:48px;font-weight:800;color:#10b981}
+  .price-box .note{font-size:12px;color:#64748b;margin-top:2px}
+  .cta{display:inline-block;background:linear-gradient(135deg,#10b981,#059669);
+       color:#fff;font-size:16px;font-weight:700;padding:16px 36px;
+       border-radius:12px;text-decoration:none;transition:.2s}
+  .cta:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(16,185,129,.4)}
+  .cta-sub{font-size:12px;color:#64748b;margin-top:10px}
+
+  /* Sections */
+  .section{padding:60px 20px;max-width:900px;margin:0 auto}
+  .section h2{font-size:24px;font-weight:700;margin-bottom:32px;text-align:center}
+
+  /* Features */
+  .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .feature{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:20px}
+  .feature .icon{font-size:28px;margin-bottom:10px}
+  .feature h3{font-size:14px;font-weight:700;margin-bottom:6px;color:#f1f5f9}
+  .feature p{font-size:13px;color:#94a3b8}
+
+  /* Steps */
+  .steps{display:flex;flex-direction:column;gap:16px}
+  .step{display:flex;gap:16px;align-items:flex-start;
+        background:#1e293b;border:1px solid #334155;border-radius:14px;padding:20px}
+  .step-num{background:#10b981;color:#fff;font-weight:800;font-size:16px;
+            width:36px;height:36px;border-radius:50%;display:flex;
+            align-items:center;justify-content:center;flex-shrink:0}
+  .step-text h3{font-size:14px;font-weight:700;margin-bottom:4px}
+  .step-text p{font-size:13px;color:#94a3b8}
+
+  /* Excel table */
+  .excel-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:16px}
+  .excel-table th{background:#10b981;color:#fff;padding:10px 14px;text-align:left}
+  .excel-table td{background:#1e293b;border:1px solid #334155;padding:10px 14px;color:#94a3b8}
+  .excel-table td b{color:#f1f5f9}
+
+  /* FAQ */
+  .faq-list{display:flex;flex-direction:column;gap:12px}
+  .faq{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px}
+  .faq h3{font-size:14px;font-weight:700;margin-bottom:6px;color:#f1f5f9}
+  .faq p{font-size:13px;color:#94a3b8}
+
+  /* CTA bottom */
+  .cta-bottom{background:linear-gradient(135deg,#0f172a,#1e293b);
+              border-top:1px solid #334155;padding:60px 20px;text-align:center}
+  .cta-bottom h2{font-size:28px;font-weight:800;margin-bottom:16px}
+  .wa-btn{display:inline-flex;align-items:center;gap:10px;
+          background:#25D366;color:#fff;font-size:16px;font-weight:700;
+          padding:16px 36px;border-radius:12px;text-decoration:none;transition:.2s}
+  .wa-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(37,211,102,.4)}
+  .wa-icon{font-size:22px}
+
+  footer{text-align:center;padding:20px;color:#334155;font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="badge">🇹🇷 Türk Öğretmenler İçin</div>
+  <h1>⚡ e-Okul Gelişim Düzeyi<br>Sihirbazı</h1>
+  <p>Saatler süren e-Okul Gelişim Düzeyi girişini <strong style="color:#10b981">dakikalara</strong> indirin. Excel listenizi yükleyin, butona basın — sihirbaz gerisini halleder.</p>
+
+  <div class="price-box">
+    <div class="amount">₺100</div>
+    <div class="note">Tek seferlik ödeme • Ömür boyu kullanım</div>
+  </div>
+  <br>
+  <a href="https://wa.me/905063705528?text=Merhaba%2C%20e-Okul%20Sihirbaz%C4%B1n%C4%B1%20almak%20istiyorum" class="cta">
+    📲 WhatsApp'tan Sipariş Ver
+  </a>
+  <div class="cta-sub">Hemen cevap verilir • Android telefona yüklenir</div>
+</section>
+
+<!-- ÖZELLIKLER -->
+<div class="section">
+  <h2>✅ Neler Yapıyor?</h2>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">⚡</div>
+      <h3>Tam Otomatik Giriş</h3>
+      <p>Tüm Gelişim Düzeyi radio buton seçimleri otomatik yapılır. Siz sadece izleyin.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">📊</div>
+      <h3>Excel'den Okur</h3>
+      <p>Öğrenci listenizi ve Gelişim Düzeyi (tema puanı) bilgilerini Excel'den yükleyin, hazır.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🏫</div>
+      <h3>Çoklu Şube</h3>
+      <p>Birden fazla şubeyi sırayla işler. Her şube tek tıkla biter.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🔒</div>
+      <h3>Güvenli</h3>
+      <p>Verileriniz hiçbir sunucuya gönderilmez. Sadece e-Okul ile çalışır.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">📱</div>
+      <h3>Android Uygulama</h3>
+      <p>APK kurulum — Play Store gerekmez. Android 7.0 ve üzeri.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🔑</div>
+      <h3>Kişisel Lisans</h3>
+      <p>Her alıcıya özel aktivasyon kodu. Paylaşıma karşı korumalı.</p>
+    </div>
+  </div>
+</div>
+
+<!-- NASIL KULLANILIR -->
+<div class="section" style="background:#1e293b;max-width:100%;padding:60px 20px">
+  <div style="max-width:900px;margin:0 auto">
+    <h2>🚀 Nasıl Kullanılır?</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <h3>WhatsApp'tan Satın Alın</h3>
+          <p>Mesaj atın, IBAN ile ödeme yapın. APK + lisans kodu anında gönderilir.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <h3>APK'yı Yükleyin</h3>
+          <p>ZIP'i açın, APK'ya dokunun ve "Yükle" deyin. 1 dakika sürer.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <h3>Excel Dosyanızı Hazırlayın</h3>
+          <p>C sütunu öğrenci no, E sütunundan itibaren tema puanları (1–4).</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">
+          <h3>⚡ Butona Basın</h3>
+          <p>e-Okul'u açın, sarı şimşek butonuna dokunun ve BAŞLAT'a basın. Bitti!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXCEL FORMAT -->
+<div class="section">
+  <h2>📋 Excel Dosyası Formatı</h2>
+  <p style="color:#94a3b8;text-align:center;margin-bottom:16px;font-size:14px">
+    e-Okul'dan indirdiğiniz öğrenci listesine sadece tema puanlarını ekleyin
+  </p>
+  <table class="excel-table">
+    <tr>
+      <th>A — Sıra</th>
+      <th>B — TC Kimlik</th>
+      <th style="background:#059669">C — ÖĞRENCİ NO ⭐</th>
+      <th>D — Ad Soyad</th>
+      <th style="background:#059669">E — Tema 1 ⭐</th>
+      <th style="background:#059669">F — Tema 2 ⭐</th>
+    </tr>
+    <tr>
+      <td>1</td><td>12345678901</td><td><b>100001</b></td>
+      <td>Ali Yıldız</td><td><b>3</b></td><td><b>4</b></td>
+    </tr>
+    <tr>
+      <td>2</td><td>98765432100</td><td><b>100002</b></td>
+      <td>Ayşe Kaya</td><td><b>4</b></td><td><b>3</b></td>
+    </tr>
+  </table>
+  <p style="font-size:12px;color:#64748b;margin-top:12px;text-align:center">
+    ⭐ işaretli sütunlar zorunlu. Puan: 1=Başlangıç, 2=Geliştirilmeli, 3=Yeterli, 4=Pekiştirilmeli
+  </p>
+</div>
+
+<!-- SSS -->
+<div class="section" style="background:#1e293b;max-width:100%;padding:60px 20px">
+  <div style="max-width:900px;margin:0 auto">
+    <h2>❓ Sık Sorulan Sorular</h2>
+    <div class="faq-list">
+      <div class="faq">
+        <h3>Verilerim güvende mi?</h3>
+        <p>Evet. Uygulama sadece e-Okul sunucusuna bağlanır. Başka hiçbir yere veri gönderilmez.</p>
+      </div>
+      <div class="faq">
+        <h3>Play Store'dan mı yükleniyor?</h3>
+        <p>Hayır. APK dosyasını doğrudan telefonunuza yüklüyorsunuz. "Bilinmeyen kaynaktan yükle" iznini bir kez vermeniz yeterli.</p>
+      </div>
+      <div class="faq">
+        <h3>Hangi Android sürümünde çalışıyor?</h3>
+        <p>Android 7.0 (Nougat) ve üzeri tüm telefon ve tabletlerde çalışır.</p>
+      </div>
+      <div class="faq">
+        <h3>e-Okul şifremi öğreniyor mu?</h3>
+        <p>Kesinlikle hayır. Şifrenizi siz girersiniz, uygulama sadece formu otomatik doldurur.</p>
+      </div>
+      <div class="faq">
+        <h3>Arkadaşımla paylaşabilir miyim?</h3>
+        <p>Her kullanıcı kişisel lisans anahtarı ile aktifleştirir. Farklı cihazda kullanmak için ayrı satın alınması gerekir.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SATIN AL -->
+<section class="cta-bottom">
+  <h2>Hemen Başlayın</h2>
+  <p style="color:#94a3b8;margin-bottom:32px;font-size:14px">
+    Ödeme yapın, APK + Lisans Kodu anında WhatsApp'tan gelir.
+  </p>
+  <a href="https://wa.me/905063705528?text=Merhaba%2C%20e-Okul%20Sihirbaz%C4%B1n%C4%B1%20almak%20istiyorum" class="wa-btn">
+    <span class="wa-icon">💬</span> WhatsApp'tan Sipariş Ver — ₺100
+  </a>
+  <div style="color:#64748b;font-size:12px;margin-top:16px">
+    IBAN ile ödeme • Dijital teslimat • e-Posta destek
+  </div>
+</section>
+
+<!-- SATIŞ KİTİ (DETAYLI BİLGİ) -->
+<div class="section" style="border-top:1px solid #334155; margin-top:40px; text-align:left;">
+  <h2 style="margin-top:20px;">📂 Satış Kiti ve Detaylı Bilgiler</h2>
+  <div style="background:#1e293b; border:1px solid #334155; border-radius:14px; padding:25px; font-size:14px; color:#94a3b8; line-height:1.8;">
+    <h3 style="color:#f1f5f9; margin-bottom:10px; border-bottom:1px solid #334155; padding-bottom:5px;">📝 Kısa Açıklama</h3>
+    <p>Ortaöğretim öğretmenleri için geliştirilmiş Android uygulaması. e-Okul'a Excel dosyasından öğrenci Gelişim Düzeylerini <b>tek tıkla, otomatik</b> girer. Saatler süren veri girişini dakikalara indirir. Kurulum gerektirmez, doğrudan APK olarak çalışır.</p>
+    
+    <h3 style="color:#f1f5f9; margin:20px 0 10px; border-bottom:1px solid #334155; padding-bottom:5px;">📄 Uzun Açıklama</h3>
+    <p><b>e-Okul Gelişim Düzeyi Girişinde Devrim</b></p>
+    <p>Her dönem sonunda saatlerce süren e-Okul Gelişim Düzeyi girişinden bıktınız mı? <b>e-Okul Gelişim Düzeyi Sihirbazı</b>, bu işlemi tamamen otomatikleştiriyor.</p>
+    
+    <h3 style="color:#f1f5f9; margin:20px 0 10px; border-bottom:1px solid #334155; padding-bottom:5px;">📋 Gereksinimler</h3>
+    <ul style="margin-left:20px; margin-bottom:10px;">
+      <li>Android 7.0 veya üzeri telefon/tablet</li>
+      <li>e-Okul (MEB) hesabı</li>
+      <li>Öğrenci listesini ve Tema çıktılarındaki durumunu puan olarak gösteren Excel dosyası (.xlsx)</li>
+    </ul>
+
+    <h3 style="color:#f1f5f9; margin:20px 0 10px; border-bottom:1px solid #334155; padding-bottom:5px;">🎯 Kimler Kullanabilir?</h3>
+    <p>Ortaöğretim öğretmenleri — sınıf öğretmeni ya da branş öğretmeni fark etmez. e-Okul'a erişebilen herkes kullanabilir.</p>
+
+    <h3 style="color:#f1f5f9; margin:20px 0 10px; border-bottom:1px solid #334155; padding-bottom:5px;">📣 Tanıtım Metni (Grup Paylaşımları İçin)</h3>
+    <div style="background:#0f172a; padding:15px; border-radius:8px; border:1px solid #334155; font-family:monospace; color:#10b981; white-space:pre-wrap;">
+🎓 Meslektaşlarıma Duyuru
+
+Her dönem e-Okul Gelişim Düzeyi girişi için saatler harcıyor musunuz? 
+
+⚡ Artık gerek yok!
+
+"e-Okul Gelişim Düzeyi Sihirbazı" uygulaması, Excel listenizdeki bilgileri e-Okul'a OTOMATİK giriyor.
+
+✅ Tek tıkla tüm şube biter
+✅ Play Store gerekmez, APK ile çalışır  
+✅ Verileriniz güvende (sunucuya gitmiyor)
+✅ Android telefon/tablet
+
+📲 Bilgi ve sipariş: 506 370 55 28 (WhatsApp)
+💰 Fiyat: ₺100 (Tek seferlik — ömür boyu)</div>
+  </div>
+</div>
+
+<footer>⚡ e-Okul Gelişim Düzeyi Sihirbazı v3.3 — Tüm hakları saklıdır</footer>
+
+</body>
+</html>
