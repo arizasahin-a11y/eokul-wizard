@@ -102,6 +102,10 @@
     ══════════════════════════════════════════════════════════ */
     if (window.top !== window.self && !S.active) return;
 
+    // Kayıt onayla başlatmak için confirm() otomatik onayla
+    window.confirm = () => true;
+
+
     /* ── Panel HTML ──────────────────────────────────────────── */
     const oldPanel = document.getElementById('ew-panel');
     if (oldPanel) oldPanel.remove();
@@ -299,7 +303,7 @@
 
         if (!rows.length) {
             const lb = document.querySelector('button.btn-primary.has-ripple');
-            if (lb) { lb.click(); setTimeout(runLoop,4000); return; }
+            if (lb) { lb.click(); setTimeout(runLoop, 3000); return; }
             msg('❌ Liste yüklenemedi.'); return;
         }
 
@@ -317,7 +321,10 @@
                     const pd = document.getElementById('ew-sube');
                     if (pd) pd.selectedIndex = sel.selectedIndex;
                     S.currentIndex=-1; save();
-                    setTimeout(()=>{ document.querySelector('button.btn-primary.has-ripple')?.click(); setTimeout(runLoop,4000); },1000);
+                    setTimeout(()=>{
+                        document.querySelector('button.btn-primary.has-ripple')?.click();
+                        setTimeout(runLoop, 3000);
+                    }, 800);
                     return;
                 }
             }
@@ -331,7 +338,7 @@
         msg(`🔄 ${sNo} No — işlem başlıyor…`);
 
         const student = S.excelData.find(s=>s.no===sNo);
-        if (S.mode==='fill' && !student) { setTimeout(runLoop,800); return; }
+        if (S.mode==='fill' && !student) { setTimeout(runLoop, 500); return; }
 
         /* Seviye hesapla */
         let baseLvl=4;
@@ -343,7 +350,7 @@
         }
 
         btnOp.click();
-        await wait(2200);
+        await wait(1400);  // 2200 → 1400ms
 
         const headers    = [...document.querySelectorAll('a.text-light')];
         const targetIdxs = parseRange(S.catRange||'1');
@@ -352,7 +359,7 @@
         for (const idx of targetIdxs) {
             if (idx>=headers.length) continue;
             const h = headers[idx];
-            if (h.classList.contains('collapsed')) { h.click(); await wait(500); }
+            if (h.classList.contains('collapsed')) { h.click(); await wait(250); }  // 500 → 250ms
             const cont = h.closest('.card')?.querySelector('.collapse');
             if (!cont) continue;
 
@@ -362,23 +369,30 @@
                 radios.forEach(rd=>{ if(!rd.checked){ rd.click(); changed=true; }});
             } else {
                 const btns2 = [...cont.querySelectorAll('button.btn-success')].filter(b=>b.innerText.includes('Temizle'));
-                for (const b of btns2) { b.click(); await wait(150); changed=true; }
+                for (const b of btns2) { b.click(); await wait(100); changed=true; }  // 150 → 100ms
             }
         }
 
         if (changed) {
-            await wait(1200);
+            await wait(700);   // 1200 → 700ms
             const kaydet = document.getElementById('OOMToolbarActive1_btnKaydet');
-            if (kaydet) { msg('💾 Kaydediliyor…'); kaydet.click(); }
-            else         { msg('⚠️ Kaydet butonu yok!'); setTimeout(runLoop,2000); }
+            if (kaydet) {
+                msg('💾 Kaydediliyor…');
+                kaydet.click();
+                // AJAX kayıt sonrası devam (sayfa yenilenmiyorsa)
+                setTimeout(runLoop, 2500);
+            } else {
+                msg('⚠️ Kaydet butonu yok!');
+                setTimeout(runLoop, 1500);
+            }
         } else {
             msg('ℹ️ Değişiklik yok.');
-            setTimeout(runLoop,1200);
+            setTimeout(runLoop, 800);  // 1200 → 800ms
         }
     }
 
     /* ── Oto-devam (sayfa yenileme sonrası) ──────────────────── */
-    const resume = () => { if (S.active && S.excelData.length>0) setTimeout(runLoop,4500); };
+    const resume = () => { if (S.active && S.excelData.length>0) setTimeout(runLoop, 3000); };
     if (document.readyState==='complete') resume();
     else window.addEventListener('load', resume);
 
