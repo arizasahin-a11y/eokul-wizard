@@ -332,7 +332,7 @@
             // BAŞLAT
             if (S.excelData.length === 0) { msg('⚠️ Önce Excel dosyası yükleyin!'); return; }
             if (S.waiting) { msg('⏸ Önce ➡ DEVAM ET\'e basın!'); return; }
-            S.active = true; S.paused = false;
+            S.active = true; S.paused = false; S.mode = 'fill';
             S.currentIndex = -1; loopBusy = false;
             save(); updateStartBtn(); runLoop();
         } else if (!S.paused) {
@@ -434,32 +434,53 @@
         if (S.mode==='fill' && !student) { loopBusy=false; setTimeout(runLoop, 500); return; }
 
         btnOp.click();
-        await wait(1400);
 
-        const headers    = [...document.querySelectorAll('a.text-light')];
+        // İçerik yüklenene kadar bekle (maks 4sn)
+        for (let w=0; w<8; w++) {
+            await wait(300);
+            if (document.querySelectorAll('input[type="radio"]').length > 0) break;
+        }
+
+        // Tema başlığı seçici — birden fazla ihtimali dene
+        let headers = [...document.querySelectorAll('a.text-light')];
+        if (!headers.length) headers = [...document.querySelectorAll('[data-toggle="collapse"] a, a[data-toggle="collapse"]')];
+        if (!headers.length) headers = [...document.querySelectorAll('.card-header a, .accordion-header a')];
+        if (!headers.length) headers = [...document.querySelectorAll('.card .card-header')];
+
         const targetIdxs = parseRange(S.catRange||'1');
         let changed      = false;
+
+        msg(`🔄 ${sNo} | ${headers.length} tema, ${document.querySelectorAll('input[type="radio"]').length} radio bulundu`);
 
         // Modal/diyalog otomatik onaylama
         function autoModalClick() {
             if (!S.autoConfirm) return false;
-            // Bootstrap modal OK/Evet butonu
             const mbtn = document.querySelector(
                 '.modal.show .btn-primary, .modal.show .btn-success, .modal.show .btn-danger, .modal.show button[data-dismiss]'
             );
             if (mbtn) { mbtn.click(); return true; }
-            // SweetAlert
             const sbtn = document.querySelector('.swal2-confirm, .swal-button--confirm');
             if (sbtn) { sbtn.click(); return true; }
             return false;
         }
 
+        // Eğer hiç başlık bulunamadıysa → tüm sayfadaki radio butonlarla çalış
+        const noHeaders = headers.length === 0;
+
         for (const idx of targetIdxs) {
-            if (idx>=headers.length) continue;
-            const h = headers[idx];
-            if (h.classList.contains('collapsed')) { h.click(); await wait(250); }
-            const cont = h.closest('.card')?.querySelector('.collapse');
-            if (!cont) continue;
+            let cont = null;
+            if (!noHeaders) {
+                if (idx >= headers.length) continue;
+                const h = headers[idx];
+                if (h.classList.contains('collapsed')) { h.click(); await wait(300); }
+                cont = h.closest('.card')?.querySelector('.collapse')
+                    || h.closest('.card')
+                    || h.parentElement?.nextElementSibling;
+            }
+            // cont=null → tüm sayfa, cont=el → sadece o bölüm
+            const searchIn = cont || document;
+            if (!searchIn) continue;
+
 
             if (S.mode==='fill') {
                 // Her tema için o sütunun min/max değerleri ile seviye hesapla
@@ -470,23 +491,22 @@
                 const r       = maxV > minV ? (stuVal - minV) / (maxV - minV) : 1;
                 const baseLvl = r < .25 ? 1 : r < .50 ? 2 : r < .75 ? 3 : 4;
                 const lvl     = getRandLvl(baseLvl);
-                msg(`🔄 ${sNo} | Tema ${idx+1}: puan=${stuVal.toFixed(1)} min=${minV.toFixed(1)} max=${maxV.toFixed(1)} → ★${lvl}`);
-                const radios = cont.querySelectorAll(`input[type="radio"][id$="_${lvl}"]`);
+                // rdMadde27_59_1 formatına uyan seçici: sona _lvl ile biten
+                const radios  = searchIn.querySelectorAll(`input[type="radio"][id$="_${lvl}"]`);
+                msg(`🔄 ${sNo} | Tema ${idx+1}: puan=${stuVal.toFixed(1)} min=${minV.toFixed(1)} max=${maxV.toFixed(1)} → ★${lvl} (${radios.length} radio)`);
                 radios.forEach(rd=>{ if(!rd.checked){ rd.click(); changed=true; }});
             } else {
-                // Temizle: öğrenci satırında veya tema içinde en sağtaki Temizle butonu
                 const temizleBtns = [
-                    // Tema accordion içindeki Temizle butonları
-                    ...cont.querySelectorAll('button'),
-                    // Öğrenci satırındaı tüm butonlar
+                    ...searchIn.querySelectorAll('button'),
                     ...tr.querySelectorAll('button')
                 ].filter(b => /temizle/i.test(b.textContent || b.innerText));
                 for (const b of temizleBtns) {
                     b.click();
                     await wait(200);
-                    autoModalClick();  // Temizle sonrası onay
+                    autoModalClick();
                     await wait(100);
                     changed = true;
+
                 }
             }
         }
