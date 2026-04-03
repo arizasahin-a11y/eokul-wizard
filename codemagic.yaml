@@ -9,7 +9,7 @@ workflows:
     instance_type: mac_mini_m1
 
     environment:
-      xcode: 15.4
+      xcode: latest
       vars:
         BUNDLE_ID: "com.eokul.wizard"
       # Apple Developer hesabı varsa aşağıdaki satırları doldurun:
