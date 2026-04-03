@@ -203,34 +203,9 @@
         );
     }
 
-    // Ders select'i bul — agresif arama, Yıl/Dönem seçici hariç
+    // Ders select = cmbBeceriler (e-okul OOK07015 sayfasından tespit edildi)
     function findDers() {
-        function isYilDonem(s) {
-            return [...s.options].some(o => /dönem|donem|\d{4}-\d{4}/i.test(o.text));
-        }
-        // 1) Bilinen ID'ler
-        const ids = ['cmbDersler','ddlDers','DdlDers','cmbDers','DropDownListDers',
-                     'ddlDers1','SelectDers','lstDers','dersDropDown'];
-        for (const id of ids) {
-            const el = document.getElementById(id);
-            if (el && !isYilDonem(el)) return el;
-        }
-        // 2) ID'de 'ders' geçen (panel ve dönem hariç)
-        const byId = [...document.querySelectorAll('select')].find(
-            s => /ders/i.test(s.id) && !s.id.startsWith('ew-') && !isYilDonem(s)
-        );
-        if (byId) return byId;
-        // 3) Seçenek metninde 'ders' geçen
-        const byOpt = [...document.querySelectorAll('select')].find(s =>
-            !s.id.startsWith('ew-') && s.id !== 'cmbSubeler' &&
-            !isYilDonem(s) &&
-            [...s.options].some(o => /ders/i.test(o.text))
-        );
-        if (byOpt) return byOpt;
-        // 4) Panel, şube ve dönem hariç herhangi select
-        return [...document.querySelectorAll('select')].find(
-            s => !s.id.startsWith('ew-') && s.id !== 'cmbSubeler' && !isYilDonem(s)
-        ) || null;
+        return document.getElementById('cmbBeceriler') || null;
     }
 
     function syncDropdowns() {
