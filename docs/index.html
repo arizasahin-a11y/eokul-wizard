@@ -301,7 +301,46 @@ Her dönem e-Okul Gelişim Düzeyi girişi için saatler harcıyor musunuz?
   </div>
 </div>
 
+
+<!-- KURULUM YARDIMI -->
+<div class="section" style="border-top:1px solid #334155; margin-top:20px;">
+  <details style="background:#1e293b; border:1px solid #334155; border-radius:14px; padding:15px; cursor:pointer;">
+    <summary style="font-size:18px; font-weight:700; color:#f1f5f9; outline:none;">📘 Kurulum Yardımı (Play Protect Engeli Giderme)</summary>
+    <div style="margin-top:15px; font-size:14px; color:#94a3b8; line-height:1.6; cursor:default;" onclick="event.stopPropagation();">
+      <p>Google Play Protect'in uygulamayı engellemesini şu yollarla aşabilirsiniz:</p>
+      
+      <h3 style="color:#f1f5f9; margin:15px 0 5px;">1. Kurulum Esnasında "Yine de Yükle" Seçeneği</h3>
+      <p>APK'yı kurarken Play Protect uyarısı çıktığında:</p>
+      <ul style="margin-left:20px; margin-bottom:10px;">
+        <li>Ekrandaki <b>"Ayrıntılar"</b> veya <b>"Daha fazla bilgi"</b> (Details) seçeneğine tıklayın.</li>
+        <li>En altta çıkan <b>"Yine de yükle"</b> (Install anyway) bağlantısına basarak kurulumu tamamlayın.</li>
+      </ul>
+
+      <h3 style="color:#f1f5f9; margin:15px 0 5px;">2. Play Protect'i Geçici Olarak Devre Dışı Bırakma</h3>
+      <p>Eğer uyarı penceresi kurulumu tamamen engelliyorsa:</p>
+      <ol style="margin-left:20px; margin-bottom:10px;">
+        <li>Google Play Store uygulamasını açın.</li>
+        <li>Sağ üstteki profil resminize tıklayın.</li>
+        <li>Play Protect menüsüne girin.</li>
+        <li>Sağ üstteki Ayarlar (çark) simgesine tıklayın.</li>
+        <li>"Uygulamaları Play Protect ile tara" seçeneğini geçici olarak kapatın.</li>
+      </ol>
+      <p>APK'yı kurduktan sonra isterseniz bu ayarı tekrar açabilirsiniz.</p>
+
+      <h3 style="color:#f1f5f9; margin:15px 0 5px;">3. Uygulama Adını ve Kimliğini Kontrol Etme</h3>
+      <p>Android Studio tarafında, uygulamanın daha "resmi" görünmesi için <code>AndroidManifest.xml</code> dosyasında şu kısımları kontrol ettim; şu an <code>com.eokul.wizard</code> olarak görünüyor. Eğer isterseniz uygulama etiketini (android:label) daha açıklayıcı bir hale getirebiliriz.</p>
+
+      <div style="background:#0f172a; padding:15px; border-radius:8px; border:1px solid #10b981; margin-top:15px; color:#10b981;">
+        <strong>💡 İPUCU:</strong> WhatsApp bildirimlerini dinleyen servis (WhatsAppListenerService), Google tarafından "hassas veri erişimi" olarak kabul edildiği için bu uyarılar normaldir. Kendi cihazınızda güvenle "Yine de Yükle" diyerek kullanmaya devam edebilirsiniz.
+      </div>
+
+      <p style="margin-top:15px; font-size:12px;">Android Studio'da "Release" (İmzalı) bir APK oluşturursanız bu uyarıların sıklığı azalabilir, ancak özel bir araç olduğu için Play Protect her zaman bir miktar şüpheli yaklaşacaktır.</p>
+    </div>
+  </details>
+</div>
+
 <footer>⚡ e-Okul Gelişim Düzeyi Sihirbazı v3.3 — Tüm hakları saklıdır</footer>
+
 
 </body>
 </html>

@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">e-Okul Sihirbazı</string>
+    <string name="title_management">Yönetim Paneli</string>
+    <string name="tab_eos">Yeni Bekleyenler</string>
+    <string name="tab_feos">Tamamlananlar</string>
+    <string name="msg_empty">Görüntülenecek veri bulunamadı.</string>
+    <string name="btn_send">Gönder</string>
 </resources>

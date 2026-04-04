@@ -73,9 +73,10 @@
     if (!document.getElementById('ew-css')) {
         const st=document.createElement('style'); st.id='ew-css';
         st.textContent=`
-          @keyframes ewPulse{0%,100%{box-shadow:0 4px 15px rgba(16,185,129,.5)}50%{box-shadow:0 4px 28px rgba(16,185,129,.9)}}
-          #ew-fab{animation:ewPulse 2.2s ease-in-out infinite}
-          #ew-fab:hover{animation:none;transform:scale(1.12)!important;transition:.15s}
+          @keyframes ewPulse{0%,100%{transform:scale(1);box-shadow:0 0 20px rgba(16,185,129,.4)}50%{transform:scale(1.08);box-shadow:0 0 35px rgba(16,185,129,.7)}}
+          #ew-fab{animation:ewPulse 2s ease-in-out infinite;background:linear-gradient(135deg,#10b981,#3b82f6)!important;
+                  border:2px solid rgba(255,255,255,.3);backdrop-filter:blur(10px)}
+          #ew-fab:hover{animation:none;transform:scale(1.15)!important;box-shadow:0 0 40px rgba(16,185,129,.8);transition:.2s}
           #ew-panel{transition:opacity .25s,transform .25s;transform-origin:bottom right}
           #ew-panel.ew-hidden{opacity:0;transform:scale(.88);pointer-events:none}
           .ew-sel{width:100%;background:#334155;border:1px solid #475569;color:#f1f5f9;
@@ -203,6 +204,8 @@
     // Kayıt onayı: önce native'i sakla, sonra override et
     if (!window._nativeConfirm) window._nativeConfirm = window.confirm;
     window.confirm = (m) => S.autoConfirm ? true : window._nativeConfirm.call(window, m);
+    if (!window._nativeAlert) window._nativeAlert = window.alert;
+    window.alert = (m) => S.autoConfirm ? true : window._nativeAlert.call(window, m);
 
 
 
@@ -577,13 +580,33 @@
         // Modal/diyalog otomatik onaylama
         function autoModalClick() {
             if (!S.autoConfirm) return false;
-            const mbtn = document.querySelector(
-                '.modal.show .btn-primary, .modal.show .btn-success, .modal.show .btn-danger, .modal.show button[data-dismiss]'
-            );
-            if (mbtn) { mbtn.click(); return true; }
-            const sbtn = document.querySelector('.swal2-confirm, .swal-button--confirm');
-            if (sbtn) { sbtn.click(); return true; }
+            // Bootstrap Modals & Custom
+            const btnSelectors = [
+                '.modal.show .btn-primary', '.modal.show .btn-success', '.modal.show .btn-info',
+                '.modal.show button[data-dismiss="modal"]:not(.close)',
+                '.swal2-confirm', '.swal-button--confirm', '.ajs-ok', '.ajs-button.ajs-ok'
+            ];
+            for (const sel of btnSelectors) {
+                const btn = document.querySelector(sel);
+                if (btn && btn.offsetParent !== null) { btn.click(); return true; }
+            }
+            // Text tabanlı arama (Tamam, OK, Evet)
+            const textBtns = [...document.querySelectorAll('.modal.show button, .alert button, .dialog button, button')]
+                .filter(b => /Tamam|OK|Evet|Kapat|Onayla/i.test(b.innerText || b.textContent));
+            if (textBtns.length > 0 && textBtns[0].offsetParent !== null) {
+                textBtns[0].click(); return true;
+            }
             return false;
+        }
+
+        // Onay polling'i: Belirli bir süre boyunca modal kovalayan yardımcı
+        async function pollAutoConfirm(durationS = 2) {
+            if (!S.autoConfirm) return;
+            const end = Date.now() + durationS * 1000;
+            while (Date.now() < end) {
+                if (autoModalClick()) break;
+                await wait(150); // 250 -> 150 (daha sık kontrol)
+            }
         }
 
         // Eğer hiç başlık bulunamadıysa → tüm sayfadaki radio butonlarla çalış
@@ -642,11 +665,10 @@
                 ].filter(b => /temizle/i.test(b.textContent || b.innerText));
                 for (const b of temizleBtns) {
                     b.click();
-                    await wait(200);
-                    autoModalClick();
-                    await wait(100);
+                    await wait(150);
+                    await pollAutoConfirm(1.2);
                     changed = true;
-
+                    break; 
                 }
             }
         }
@@ -659,11 +681,11 @@
             if (kaydet) {
                 msg('💾 Kaydediliyor…');
                 kaydet.click();
-                await wait(300);
-                autoModalClick();
+                await wait(300); // 400 -> 300
+                await pollAutoConfirm(2.5); // 4 -> 2.5
                 loopBusy = false;
                 if (S.autoConfirm) {
-                    setTimeout(runLoop, 1400);
+                    setTimeout(runLoop, 1200);
                 } else {
                     S.waiting = true; save();
                     msg('⏸ Kaydet onaylanınca ➡ DEVAM ET\'e basın');

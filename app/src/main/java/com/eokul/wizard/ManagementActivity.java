@@ -41,7 +41,7 @@ public class ManagementActivity extends AppCompatActivity {
         "6) Tüm şubeleri bir seferde yapmak istiyorsanız alttaki kutucuğa tik atınız. \n" +
         "7) Tam otomatik işlem için kayıt Onayını otomatik seçin.\n" +
         "8) başlat tuşuna basın\n" +
-        "9) Gerekirse duraklat\";
+        "9) Gerekirse duraklat";
 
     private TabLayout tabLayout;
     private RecyclerView recyclerView;
