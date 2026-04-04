@@ -59,10 +59,12 @@
         return [...idx].sort((a,b)=>a-b);
     }
     function getRandLvl(base) {
-        const r=Math.random();
-        if(base===1) return r<.15?2:1;
-        if(base===4) return r<.15?3:4;
-        if(r<.10) return base-1; if(r<.20) return base+1; return base;
+        const r = Math.random();
+        if (base === 1) return r < 0.20 ? 2 : 1;
+        if (base === 4) return r < 0.20 ? 3 : 4;
+        if (r < 0.10) return base - 1; 
+        if (r < 0.20) return base + 1; 
+        return base;
     }
     const wait = ms => new Promise(r=>setTimeout(r,ms));
     const msg  = t  => { const e=document.getElementById('ew-log'); if(e) e.textContent=t; };
@@ -603,18 +605,36 @@
 
 
             if (S.mode==='fill') {
-                // Her tema için o sütunun min/max değerleri ile seviye hesapla
+                // Her tema için o sütunun min/max değerleri ile temel seviye hesapla
                 const colVals = S.excelData.map(d => d.vals[idx] ?? d.vals[0] ?? 0);
                 const minV    = Math.min(...colVals);
                 const maxV    = Math.max(...colVals);
                 const stuVal  = student.vals[idx] ?? student.vals[0] ?? 0;
                 const r       = maxV > minV ? (stuVal - minV) / (maxV - minV) : 1;
                 const baseLvl = r < .25 ? 1 : r < .50 ? 2 : r < .75 ? 3 : 4;
-                const lvl     = getRandLvl(baseLvl);
-                // rdMadde27_59_1 formatına uyan seçici: sona _lvl ile biten
-                const radios  = searchIn.querySelectorAll(`input[type="radio"][id$="_${lvl}"]`);
-                msg(`🔄 ${sNo} | Tema ${idx+1}: puan=${stuVal.toFixed(1)} min=${minV.toFixed(1)} max=${maxV.toFixed(1)} → ★${lvl} (${radios.length} radio)`);
-                radios.forEach(rd=>{ if(!rd.checked){ rd.click(); changed=true; }});
+
+                // Her bir madde (soru) grubu için ayrı varyasyon uygula
+                const allRadios = searchIn.querySelectorAll('input[type="radio"]');
+                const stems = new Set();
+                allRadios.forEach(rd => {
+                    const id = rd.id;
+                    const lastUnder = id.lastIndexOf('_');
+                    if (lastUnder !== -1) {
+                        stems.add(id.substring(0, lastUnder));
+                    }
+                });
+
+                stems.forEach(stem => {
+                    const lvl = getRandLvl(baseLvl);
+                    const targetId = `${stem}_${lvl}`;
+                    const rd = document.getElementById(targetId);
+                    if (rd && !rd.checked) {
+                        rd.click();
+                        changed = true;
+                    }
+                });
+
+                msg(`🔄 ${sNo} | Tema ${idx+1}: puan=${stuVal.toFixed(1)} → ★${baseLvl} (varyanslı)`);
             } else {
                 const temizleBtns = [
                     ...searchIn.querySelectorAll('button'),

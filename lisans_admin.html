@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔑 e-Okul Lisans Yönetimi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  body { margin: 0; background: #0f172a; color: #f1f5f9; font-family: 'Inter', sans-serif; 
+         display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; 
+          padding: 32px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+  h1 { font-size: 22px; margin: 0 0 8px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .sub { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+  
+  .code-display { background: #0f172a; border: 2px dashed #334155; border-radius: 12px; 
+                  padding: 24px; text-align: center; margin-bottom: 20px; transition: 0.3s; }
+  .code-display.active { border-color: #10b981; background: #064e3b20; }
+  #current-key { font-family: monospace; font-size: 24px; font-weight: 700; color: #10b981; 
+                 letter-spacing: 2px; display: block; min-height: 28px; }
+  
+  button { width: 100%; background: linear-gradient(135deg,#10b981,#059669); color: #fff; 
+           border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 700; 
+           cursor: pointer; transition: 0.2s; margin-bottom: 12px; }
+  button:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(16,185,129,0.4); }
+  button:active { transform: translateY(0); }
+  
+  .history-header { font-size: 12px; color: #94a3b8; text-transform: uppercase; 
+                    letter-spacing: 1px; margin: 32px 0 12px; display: flex; 
+                    justify-content: space-between; align-items: center; }
+  .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; 
+                  overflow-y: auto; padding-right: 5px; }
+  .history-item { background: #0f172a; padding: 10px 16px; border-radius: 8px; 
+                  font-size: 13px; font-family: monospace; display: flex; 
+                  justify-content: space-between; align-items: center; border: 1px solid #1e293b; }
+  .history-item span { color: #94a3b8; font-size: 11px;}
+  .history-item b { color: #f1f5f9; cursor: pointer; }
+  .history-item b:hover { color: #10b981; text-decoration: underline; }
+
+  .copy-toast { position: fixed; bottom: 20px; background: #10b981; color: #fff; 
+                padding: 10px 20px; border-radius: 30px; font-size: 14px; 
+                font-weight: 600; opacity: 0; transition: 0.3s; pointer-events: none; }
+  
+  /* Scrollbar */
+  .history-list::-webkit-scrollbar { width: 6px; }
+  .history-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+  .tool-box { display: flex; gap: 10px; margin-top: 10px; }
+  .tool-btn { background: #334155; padding: 10px; font-size: 12px; border-radius: 10px; flex: 1; }
+  .clear-btn { background: transparent; border: 1px solid #450a0a; color: #ef4444; 
+               font-size: 11px; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+  .clear-btn:hover { background: #450a0a; }
+
+  .alert { background: #450a0a; color: #fca5a5; font-size: 11px; padding: 10px; 
+           border-radius: 8px; margin-top: 20px; border: 1px solid #7f1d1d; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1><span>🔑</span> Lisans Yönetimi</h1>
+  <p class="sub">Yeni bir kod üretin ve güvenle saklayın.</p>
+
+  <div class="code-display" id="display-container">
+    <span id="current-key">---- ---- ---- ----</span>
+  </div>
+
+  <button onclick="generateSingle()">⚡ Yeni Lisans Oluştur</button>
+  
+  <div class="tool-box">
+    <button id="copy-btn" class="tool-btn" style="display:none;" onclick="copyCurrent()">📋 Kopyala</button>
+    <button id="dl-btn" class="tool-btn" style="display:none;" onclick="downloadHistory()">💾 Yedekle (CSV)</button>
+  </div>
+
+  <div class="history-header">
+    <span>ÜRETİLEN KODLAR</span>
+    <button class="clear-btn" onclick="clearHistory()">Temizle</button>
+  </div>
+  <div class="history-list" id="history-box">
+    <!-- Geçmiş buraya gelecek -->
+  </div>
+  
+  <div class="alert">
+    <b>DİKKAT:</b> Kodlar tarayıcınızın "LocalStorage" hafızasına kaydedilir. Tarayıcıyı kapatsanız dahi silinmez. Ancak <b>"Tarayıcı Geçmişini Temizle"</b> (Tüm verileri sil) derseniz bu liste kaybolur. Arada bir <b>"Yedekle"</b> butonuna basarak kopyanızı alın.
+  </div>
+</div>
+
+<div class="copy-toast" id="toast">Kopyalandı!</div>
+
+<script>
+const _ALPHA = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+const _SALT  = 0x7A59;
+const STORAGE_KEY = 'eokul_keys_v3';
+
+function _licHash(body) {
+  let h = _SALT;
+  for (let c of body) { h += c.charCodeAt(0); h = (h * 31) & 0xFFFFFF; }
+  return [20,15,10,5].map(s => _ALPHA[(h>>s)&0x1F]).join('');
+}
+
+function genKey() {
+  const b = Array.from({length:12}, () => _ALPHA[Math.floor(Math.random()*32)]).join('');
+  const chk = _licHash(b);
+  const full = b + chk;
+  return [0,4,8,12].map(i => full.slice(i,i+4)).join('-');
+}
+
+function getHistory() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+}
+
+function saveToHistory(key) {
+  const history = getHistory();
+  history.unshift({key, date: new Date().toLocaleString('tr-TR')});
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const history = getHistory();
+  const box = document.getElementById('history-box');
+  const dlBtn = document.getElementById('dl-btn');
+  
+  box.innerHTML = history.length ? '' : '<div style="text-align:center; color:#475569; font-size:12px; margin-top:20px;">Henüz kod üretilmedi.</div>';
+  dlBtn.style.display = history.length ? 'block' : 'none';
+
+  history.forEach((item) => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `
+      <b onclick="copyText('${item.key}')">${item.key}</b>
+      <span>${item.date.split(' ')[0]}</span>
+    `;
+    box.appendChild(div);
+  });
+}
+
+function generateSingle() {
+  const key = genKey();
+  const history = getHistory();
+  if (history.some(h => h.key === key)) return generateSingle();
+
+  document.getElementById('current-key').textContent = key;
+  document.getElementById('display-container').classList.add('active');
+  document.getElementById('copy-btn').style.display = 'block';
+  
+  saveToHistory(key);
+}
+
+function copyCurrent() {
+  const key = document.getElementById('current-key').textContent;
+  copyText(key);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const toast = document.getElementById('toast');
+    toast.style.opacity = '1';
+    setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+  });
+}
+
+function downloadHistory() {
+  const history = getHistory();
+  let csv = 'Lisans Anahtarı,Üretim Tarihi\n';
+  history.forEach(i => { csv += `${i.key},${i.date}\n`; });
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', 'eokul_lisans_yedek.csv');
+  link.click();
+}
+
+function clearHistory() {
+  if (confirm('Tüm üretim geçmişi silinsin mi?')) {
+    localStorage.removeItem(STORAGE_KEY);
+    renderHistory();
+    document.getElementById('current-key').textContent = '---- ---- ---- ----';
+    document.getElementById('display-container').classList.remove('active');
+    document.getElementById('copy-btn').style.display = 'none';
+  }
+}
+
+renderHistory();
+</script>
+
+</body>
+</html>
