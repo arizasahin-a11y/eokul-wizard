@@ -12,6 +12,7 @@ public class Order {
     public String senderNumber;
     public String message;
     public String status; // "eOS" or "FeOS"
+    public String androidId;
     public String activationCode;
     public long timestamp;
     
@@ -21,10 +22,11 @@ public class Order {
 
     public Order() {}
 
-    public Order(String name, String number, String msg) {
+    public Order(String name, String number, String msg, String androidId) {
         this.senderName = name;
         this.senderNumber = number;
         this.message = msg;
+        this.androidId = androidId;
         this.status = "eOS";
         this.timestamp = System.currentTimeMillis();
     }

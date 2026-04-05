@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
 
 public class WhatsAppListenerService extends NotificationListenerService {
     private static final String TAG = "WhatsAppListener";
-    private static final String TRIGGER_PHRASE = "Merhaba, e-Okul Sihirbazını almak istiyorum";
+    private static final String TRIGGER_PHRASE = "E-okul Sihirbazı uygulamasını almak istiyorum";
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Override
@@ -23,27 +23,32 @@ public class WhatsAppListenerService extends NotificationListenerService {
 
         Notification notification = sbn.getNotification();
         Bundle extras = notification.extras;
-        String title = extras.getString(Notification.EXTRA_TITLE); // Genellikle gönderen adı
-        CharSequence text = extras.getCharSequence(Notification.EXTRA_TEXT); // Mesaj içeriği
+        String title = extras.getString(Notification.EXTRA_TITLE);
+        CharSequence text = extras.getCharSequence(Notification.EXTRA_TEXT);
 
         if (title == null || text == null) return;
 
         String msg = text.toString();
         if (msg.contains(TRIGGER_PHRASE)) {
             Log.d(TAG, "Yeni eOS başvurusu yakalandı: " + title);
-            saveOrder(title, msg);
+            
+            String androidId = null;
+            if (msg.contains("Cihaz ID:")) {
+                androidId = msg.substring(msg.indexOf("Cihaz ID:") + 9).trim();
+            }
+            
+            saveOrder(title, msg, androidId);
         }
     }
 
-    private void saveOrder(String sender, String msg) {
+    private void saveOrder(String sender, String msg, String androidId) {
         executor.execute(() -> {
             AppDatabase db = AppDatabase.getDatabase(getApplicationContext());
-            // Önce bu numaradan (veya isimden) kayıt var mı kontrol et
             Order existing = db.orderDao().getOrderByNumber(sender);
             if (existing == null) {
-                Order order = new Order(sender, sender, msg);
+                Order order = new Order(sender, sender, msg, androidId);
                 db.orderDao().insert(order);
-                Log.d(TAG, "Veritabanına kaydedildi.");
+                Log.d(TAG, "Veritabanına kaydedildi. ID: " + androidId);
             } else {
                 Log.d(TAG, "Kayıt zaten var, atlanıyor.");
             }

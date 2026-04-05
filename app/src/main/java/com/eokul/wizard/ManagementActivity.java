@@ -158,7 +158,10 @@ public class ManagementActivity extends AppCompatActivity {
 
     private void sendPackage(Order order) {
         if (order.activationCode == null || order.activationCode.isEmpty()) {
-            order.activationCode = LicensingHelper.generateKey();
+            if (order.androidId == null || order.androidId.isEmpty()) {
+                Toast.makeText(this, "Hata: Cihaz ID bulunamadı! Manuel anahtar gerekebilir.", Toast.LENGTH_LONG).show();
+            }
+            order.activationCode = LicensingHelper.generateKey(order.androidId);
         }
 
         String fullMessage = TEMPLATE + "\n" + order.activationCode + "\n\nİşleminiz Tamamdır";

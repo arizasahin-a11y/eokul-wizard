@@ -1,5 +1,5 @@
 /**
- * e-Okul Gelişim Düzeyi Sihirbazı v3.3 — Android WebView
+ * e-Okul Gelişim Düzeyi Sihirbazı v3.4 — Android WebView (Tied License)
  * SheetJS (XLSX), MainActivity tarafından önceden enjekte edilir.
  */
 (function () {
@@ -26,7 +26,10 @@
 
     function _licHash(body) {
         let h = _SALT;
-        for (let c of body) { h += c.charCodeAt(0); h = (h * 31) & 0xFFFFFF; }
+        const aid = (window.ANDROID_ID || "").toUpperCase();
+        for (let i=0; i<aid.length; i++) { h += aid.charCodeAt(i); h = (h * 31) & 0xFFFFFF; }
+        const b = body.toUpperCase();
+        for (let i=0; i<b.length; i++) { h += b.charCodeAt(i); h = (h * 31) & 0xFFFFFF; }
         return [20,15,10,5].map(s => _ALPHA[(h>>s)&0x1F]).join('');
     }
     function validateLic(raw) {
@@ -44,6 +47,74 @@
         const k = key.toUpperCase().replace(/[^A-Z2-9]/g,'');
         localStorage.setItem(LIC_STORE, JSON.stringify({ok:true, k, t:Date.now()}));
     }
+
+    function showLicModal() {
+        let ov = document.getElementById('ew-lic-ov');
+        if (!ov) {
+            ov = document.createElement('div'); ov.id='ew-lic-ov';
+            Object.assign(ov.style, {
+                display:'none', position:'fixed', inset:'0',
+                background:'rgba(0,0,0,0.88)', zIndex:'999999999',
+                alignItems:'center', justifyContent:'center'
+            });
+            ov.innerHTML = `
+              <div style="background:#1e293b;color:#f1f5f9;padding:24px;border-radius:18px;
+                  box-shadow:0 20px 40px rgba(0,0,0,.8);font-family:'Segoe UI',sans-serif;
+                  width:min(320px,94vw);border:1px solid #334155;text-align:center;">
+                <div style="font-size:36px;margin-bottom:8px">⚡</div>
+                <div style="font-size:17px;font-weight:700;margin-bottom:4px">e-Okul Sihirbazı</div>
+                <div style="font-size:12px;color:#94a3b8;margin-bottom:16px">Devam etmek için sipariş verin</div>
+                
+
+                <button id="ew-lic-wa"
+                  style="width:100%;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;
+                         border:none;border-radius:8px;padding:14px;font-size:14px;font-weight:700;
+                         cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px">
+                  <span>Sipariş Ver (WhatsApp)</span>
+                </button>
+
+                <div style="margin:16px 0;display:flex;align-items:center;gap:10px;color:#475569">
+                  <hr style="flex:1;border-color:#334155"><span>VEYA</span><hr style="flex:1;border-color:#334155">
+                </div>
+
+                <input id="ew-lic-inp" placeholder="XXXX-XXXX-XXXX-XXXX"
+                  style="width:100%;background:#0f172a;border:1px solid #475569;color:#f1f5f9;
+                         padding:10px;border-radius:8px;font-size:14px;box-sizing:border-box;
+                         text-align:center;letter-spacing:2px;margin-bottom:12px;font-family:monospace">
+                <button id="ew-lic-btn"
+                  style="width:100%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;
+                         border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;
+                         cursor:pointer;margin-bottom:10px">
+                  ✅ Aktifleştir
+                </button>
+                <div id="ew-lic-err" style="color:#ef4444;font-size:12px;min-height:16px"></div>
+                <button id="ew-lic-cancel" style="background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;margin-top:10px">Vazgeç</button>
+              </div>`;
+            document.body.appendChild(ov);
+            
+            document.getElementById('ew-lic-wa').onclick = () => {
+                const msg = `Merhaba, E-okul Sihirbazı uygulamasını almak istiyorum.\nCihaz ID: ${window.ANDROID_ID || 'Bilinmiyor'}`;
+                if (window.Android && window.Android.openWhatsApp) {
+                    window.Android.openWhatsApp('905063705528', msg);
+                } else {
+                    window.open(`https://wa.me/905063705528?text=${encodeURIComponent(msg)}`);
+                }
+            };
+
+            document.getElementById('ew-lic-btn').onclick = () => {
+                const val = document.getElementById('ew-lic-inp').value.trim();
+                if (validateLic(val)) {
+                    saveLic(val);
+                    ov.style.display = 'none';
+                    location.reload();
+                } else {
+                    document.getElementById('ew-lic-err').textContent = '❌ Geçersiz lisans anahtarı!';
+                }
+            };
+            document.getElementById('ew-lic-cancel').onclick = () => ov.style.display = 'none';
+        }
+        ov.style.display = 'flex';
+    }
     /* ───────────────────────────────────────────────────────────────── */
 
 
@@ -60,10 +131,15 @@
     }
     function getRandLvl(base) {
         const r = Math.random();
-        if (base === 1) return r < 0.20 ? 2 : 1;
-        if (base === 4) return r < 0.20 ? 3 : 4;
-        if (r < 0.10) return base - 1; 
-        if (r < 0.20) return base + 1; 
+        if (r < 0.10) { // %10 ihtimalle 2 düzey kaydır
+            let n = Math.random() < 0.5 ? base - 2 : base + 2;
+            if (n < 1) n = 1; if (n > 4) n = 4;
+            return n;
+        } else if (r < 0.35) { // +%25 (toplam %35) ihtimalle 1 düzey kaydır
+            let n = Math.random() < 0.5 ? base - 1 : base + 1;
+            if (n < 1) n = 1; if (n > 4) n = 4;
+            return n;
+        }
         return base;
     }
     const wait = ms => new Promise(r=>setTimeout(r,ms));
@@ -90,73 +166,6 @@
         document.head.appendChild(st);
     }
 
-    /* ── AKTİVASYON KONTROLÜ ─────────────────────────────────────── */
-    if (!isActivated()) {
-        let lockedFab = document.getElementById('ew-fab');
-        if (!lockedFab) {
-            lockedFab = document.createElement('div'); lockedFab.id='ew-fab';
-            Object.assign(lockedFab.style, {
-                position:'fixed', bottom:'20px', right:'20px',
-                width:'52px', height:'52px', zIndex:'99999999',
-                background:'linear-gradient(135deg,#475569,#334155)',
-                borderRadius:'50%', display:'flex', alignItems:'center',
-                justifyContent:'center', cursor:'pointer',
-                fontSize:'26px', userSelect:'none'
-            });
-            lockedFab.textContent = '🔒';
-            document.body.appendChild(lockedFab);
-        }
-        if (!document.getElementById('ew-lic-ov')) {
-            const ov = document.createElement('div'); ov.id='ew-lic-ov';
-            Object.assign(ov.style, {
-                display:'none', position:'fixed', inset:'0',
-                background:'rgba(0,0,0,0.88)', zIndex:'999999999',
-                alignItems:'center', justifyContent:'center'
-            });
-            ov.innerHTML = `
-              <div style="background:#1e293b;color:#f1f5f9;padding:28px 24px;border-radius:18px;
-                  box-shadow:0 20px 40px rgba(0,0,0,.8);font-family:'Segoe UI',sans-serif;
-                  width:min(300px,88vw);border:1px solid #334155;text-align:center;">
-                <div style="font-size:36px;margin-bottom:8px">⚡</div>
-                <div style="font-size:17px;font-weight:700;margin-bottom:4px">e-Okul Sihirbazı</div>
-                <div style="font-size:12px;color:#94a3b8;margin-bottom:20px">Lisans anahtarınızı girin</div>
-                <input id="ew-lic-inp" placeholder="XXXX-XXXX-XXXX-XXXX"
-                  style="width:100%;background:#0f172a;border:1px solid #475569;color:#f1f5f9;
-                         padding:10px;border-radius:8px;font-size:14px;box-sizing:border-box;
-                         text-align:center;letter-spacing:2px;margin-bottom:12px;font-family:monospace">
-                <button id="ew-lic-btn"
-                  style="width:100%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;
-                         border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;
-                         cursor:pointer;margin-bottom:10px">
-                  ✅ Aktifleştir
-                </button>
-                <div id="ew-lic-err" style="color:#ef4444;font-size:12px;min-height:16px"></div>
-                <div style="font-size:10px;color:#475569;margin-top:12px">
-                  Satın alma sonrası e-posta ile gelen anahtarı girin
-                </div>
-              </div>`;
-            document.body.appendChild(ov);
-            document.getElementById('ew-lic-btn').onclick = () => {
-                const val = document.getElementById('ew-lic-inp').value.trim();
-                if (validateLic(val)) {
-                    saveLic(val);
-                    ov.style.display = 'none';
-                    location.reload();
-                } else {
-                    document.getElementById('ew-lic-err').textContent = '❌ Geçersiz lisans anahtarı!';
-                }
-            };
-            document.getElementById('ew-lic-inp').addEventListener('keydown', e => {
-                if (e.key === 'Enter') document.getElementById('ew-lic-btn').click();
-            });
-        }
-        lockedFab.onclick = () => {
-            document.getElementById('ew-lic-ov').style.display = 'flex';
-        };
-        return; // Lisans yoksa buraya kadar — asıl uygulama çalışmaz
-    }
-    /* ───────────────────────────────────────────────────────────────── */
-
     /* ── ⚡ FAB ──────────────────────────────────────────────── */
     let fab = document.getElementById('ew-fab');
     if (!fab) {
@@ -177,16 +186,14 @@
     if (!IS_TARGET) {
         const OO_URL = 'https://e-okul.meb.gov.tr/OrtaOgretim/OrtaOgretim.aspx';
 
-        // window.name sayfa geçişlerinde korunur (sessionStorage'dan güvenilir)
         if (window.name === 'ew_nav') {
             window.name = '';
-            window.location.href = OOK_URL;  // 2. adım: OOK'a geç
+            window.location.href = OOK_URL; 
             return;
         }
 
         fab.onclick = () => {
-            window.name = 'ew_nav';  // flag: sonraki sayfada OOK'a git
-            // Önce sayfadaki OrtaÖğretim linkini bul, yoksa hardcode URL
+            window.name = 'ew_nav'; 
             const link = [...document.querySelectorAll('a[href]')].find(a =>
                 /OrtaO[gğ]retim/i.test(a.href) && !a.href.includes('OKL')
             );
@@ -201,12 +208,10 @@
     ══════════════════════════════════════════════════════════ */
     if (window.top !== window.self && !S.active) return;
 
-    // Kayıt onayı: önce native'i sakla, sonra override et
     if (!window._nativeConfirm) window._nativeConfirm = window.confirm;
     window.confirm = (m) => S.autoConfirm ? true : window._nativeConfirm.call(window, m);
     if (!window._nativeAlert) window._nativeAlert = window.alert;
     window.alert = (m) => S.autoConfirm ? true : window._nativeAlert.call(window, m);
-
 
 
     /* ── Panel HTML ──────────────────────────────────────────── */
@@ -221,7 +226,6 @@
     box-shadow:0 20px 40px rgba(0,0,0,.65);font-family:'Segoe UI',sans-serif;
     width:min(318px,90vw);border:1px solid #334155;">
 
-  <!-- Başlık -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
     <span style="font-size:15px;font-weight:700">⚡ e-Okul Sihirbazı</span>
     <span style="font-size:10px;color:#7c3aed;font-weight:700;letter-spacing:1px">@rız@</span>
@@ -231,7 +235,6 @@
     </div>
   </div>
 
-  <!-- Yardım Paneli (gizli) -->
   <div id="ew-help" style="display:none;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:10px;font-size:11px;color:#94a3b8;line-height:1.8">
     <b style="color:#f1f5f9;font-size:12px">📚 Kullanım Kılavuzu</b><br>
     <b style="color:#10b981">1. Excel:</b> C=Öğrenci No, E→…=Tema puanları<br>
@@ -239,26 +242,18 @@
     <b style="color:#10b981">3. Excel yükle:</b> Dosya seç butonuyla.<br>
     <b style="color:#10b981">4. Tema No:</b> "1" veya "2-4" formatında.<br>
     <b style="color:#10b981">5. BAŞLAT:</b> Sırayla işler &amp; kaydeder.<br>
-    <hr style="border-color:#334155;margin:6px 0">
-    <b style="color:#f59e0b">⏸ DURAKLAT:</b> Mevcut öğrenci biter, bekler.<br>
-    <b style="color:#7c3aed">➡ DEVAM ET</b> (mor): Manuel onay sonrası.<br>
-    <b style="color:#ef4444">🗑 TEMİZLE:</b> Şubenin tüm girilerini siler.<br>
-    <b style="color:#475569">⏹ DURDUR:</b> Her şeyi sıfırlar.
   </div>
 
-  <!-- Şube / Ders -->
   <label class="ew-lbl" style="margin-top:0">Şube:</label>
   <select id="ew-sube" class="ew-sel"><option>Yükleniyor…</option></select>
   <label class="ew-lbl">Ders:</label>
   <select id="ew-ders" class="ew-sel"><option>Yükleniyor…</option></select>
 
-  <!-- Log -->
   <div style="background:#0f172a;padding:10px;border-radius:10px;margin-bottom:12px;font-size:12px">
     <div id="ew-info">${hd?'📋 Kayıtlı: '+S.excelData.length+' Öğrenci':'⚠️ Excel yüklenmedi'}</div>
-    <div id="ew-log" style="color:#94a3b8;font-size:11px;margin-top:5px">Bekleniyor…</div>
+    <div id="ew-log" style="color:#94a3b8;font-size:11px;margin-top:5px">Bekleniyor… ${isActivated()?'':'(Lisans Gerekli)'}</div>
   </div>
 
-  <!-- Excel — HER ZAMAN GÖRÜİR -->
   <div style="margin-bottom:12px">
     <label class="ew-lbl" style="margin-top:0">
       ${hd?'📊 Excel Değiştir:':'📂 Excel Dosyası (.xlsx/.xls):'}
@@ -268,7 +263,6 @@
              color:#f1f5f9;padding:9px;border-radius:8px;box-sizing:border-box">
   </div>
 
-  <!-- Tema No -->
   <label class="ew-lbl">Tema No (örn: 1 veya 2-4):</label>
   <input type="text" id="ew-cat" class="ew-inp" value="${S.catRange}" style="margin-bottom:10px">
   <label style="font-size:13px;color:#94a3b8;display:flex;align-items:center;gap:8px;
@@ -282,7 +276,6 @@
     Kayıt Onayını Otomatik Onayla
   </label>
 
-  <!-- Eylem Butonları -->
   <div style="display:flex;gap:8px;margin-bottom:8px">
     <button id="ew-start" class="ew-btn" ${hd?'':'disabled'}
       style="flex:2;background:${hd?'#10b981':'#374151'}">▶ BAŞLAT</button>
@@ -298,6 +291,7 @@
 
   <div style="text-align:right">
     <a href="#" id="ew-reset" style="color:#475569;font-size:11px;text-decoration:none">⟳ Veriyi Sıfırla</a>
+    ${isActivated()?'':'<br><a href="#" id="ew-lic-show" style="color:#10b981;font-size:11px;text-decoration:none">🔑 Lisans Anahtarı Gir</a>'}
   </div>
 </div>`;
 
@@ -308,7 +302,6 @@
     if (!S.open) panel.classList.add('ew-hidden');
     document.body.appendChild(panel);
 
-    /* ── Toggle ──────────────────────────────────────────────── */
     function togglePanel() {
         S.open = !S.open;
         panel.classList.toggle('ew-hidden', !S.open);
@@ -320,11 +313,10 @@
         const h = document.getElementById('ew-help');
         if (h) h.style.display = h.style.display === 'none' ? 'block' : 'none';
     };
+    const lsBtn = document.getElementById('ew-lic-show');
+    if (lsBtn) lsBtn.onclick = (e) => { e.preventDefault(); showLicModal(); };
 
 
-    /* ── Dropdown Senkronu ───────────────────────────────────── */
-
-    // Sayfanın herhangi bir select'ini panel select'e yansıt
     function mirrorOpts(src, dst) {
         if (!src || !dst) return;
         const prev = dst.value;
@@ -333,21 +325,9 @@
         if (prev && dst.querySelector(`option[value="${prev}"]`)) dst.value = prev;
     }
 
-    // Yıl/Dönem select'i bul
-    function findYilDonem() {
-        return [...document.querySelectorAll('select')].find(s =>
-            !s.id.startsWith('ew-') &&
-            [...s.options].some(o => /dönem|donem|\d{4}-\d{4}/i.test(o.text))
-        );
-    }
-
-    // Ders select = cmbBeceriler (e-okul OOK07015 sayfasından tespit edildi)
-    function findDers() {
-        return document.getElementById('cmbBeceriler') || null;
-    }
+    function findDers() { return document.getElementById('cmbBeceriler') || null; }
 
     function syncDropdowns() {
-        // ── Ortak polling fonksiyonu ─────────────────────
         function makePoller(getPage, panelId, triggerChange) {
             let lastHTML = '';
             return () => {
@@ -362,12 +342,9 @@
                     const fresh = getPage();
                     if (!fresh) return;
                     const val = panelSel.value;
-                    if (window.$ && window.$.fn && window.$.fn.select2
-                            && $(fresh).data('select2')) {
-                        // Select2 bağlı: jQuery üzerinden değer ata
+                    if (window.$ && window.$.fn && window.$.fn.select2 && $(fresh).data('select2')) {
                         $(fresh).val(val).trigger('change');
                     } else {
-                        // Standart select
                         fresh.value = val;
                         fresh.dispatchEvent(new Event('change', {bubbles: true}));
                     }
@@ -375,20 +352,13 @@
                 };
             };
         }
-
-
-        const pollSube = makePoller(
-            () => document.getElementById('cmbSubeler'), 'ew-sube'
-        );
+        const pollSube = makePoller(() => document.getElementById('cmbSubeler'), 'ew-sube');
         const pollDers = makePoller(findDers, 'ew-ders', autoListele);
-
         pollSube(); pollDers();
         setInterval(() => { pollSube(); pollDers(); }, 500);
     }
     setTimeout(syncDropdowns, 1200);
 
-    /* ── Ders değişince otomatik Listele ──────────────── */
-    // makePoller içinde ew-ders için triggerChange olarak geçilecek
     function autoListele() {
         setTimeout(() => {
             const btn = document.querySelector('button.btn-primary.has-ripple');
@@ -396,8 +366,6 @@
         }, 600);
     }
 
-
-    /* ── Excel ──────────────────────────────────────────────── */
     document.getElementById('ew-file').onchange = function (e) {
         const f = e.target.files[0]; if (!f) return;
         msg('📂 Excel okunuyor…');
@@ -419,20 +387,17 @@
                 }
                 S.excelData = data; S.currentIndex = -1; S.active = false;
                 save();
-                const colCount = data[0]?.vals.length || 0;
-                const infoEl   = document.getElementById('ew-info');
                 const startEl  = document.getElementById('ew-start');
                 const clearEl  = document.getElementById('ew-clear');
-                if (infoEl) infoEl.textContent = '📋 Kayıtlı: ' + data.length + ' Öğrenci | ' + colCount + ' tema sütunu';
+                document.getElementById('ew-info').textContent = '📋 Kayıtlı: ' + data.length + ' Öğrenci';
                 if (startEl) { updateStartBtn(); }
                 if (clearEl) { clearEl.disabled=false; clearEl.style.background='#ef4444'; }
-                msg('✅ ' + data.length + ' öğrenci yüklendi. Şube/ders seçimini koruyun.');
+                msg('✅ Excel yüklendi.');
             } catch(ex) { alert('Excel okunamadı: '+ex.message); }
         };
         r.readAsBinaryString(f);
     };
 
-    /* ── Başlat / Duraklat / Devam Et yardımcısı ────────── */
     function updateStartBtn() {
         const btn = document.getElementById('ew-start');
         if (!btn) return;
@@ -451,21 +416,18 @@
         }
     }
 
-    /* ── Butonlar ───────────────────────────────────────────── */
     document.getElementById('ew-start').onclick = () => {
+        if (!isActivated()) { showLicModal(); return; }
         if (!S.active) {
-            // BAŞLAT
             if (S.excelData.length === 0) { msg('⚠️ Önce Excel dosyası yükleyin!'); return; }
             if (S.waiting) { msg('⏸ Önce ➡ DEVAM ET\'e basın!'); return; }
             S.active = true; S.paused = false; S.mode = 'fill';
             S.currentIndex = -1; loopBusy = false;
             save(); updateStartBtn(); runLoop();
         } else if (!S.paused) {
-            // DURAKLAT
             S.paused = true; save(); updateStartBtn();
-            msg('⏸ Duraklatıldı. Devam etmek için tekrar basın.');
+            msg('⏸ Duraklatıldı.');
         } else {
-            // DEVAM ET
             S.paused = false; loopBusy = false; save(); updateStartBtn();
             msg('▶ Devam ediliyor…');
             runLoop();
@@ -480,11 +442,11 @@
         msg('⏹ Durduruldu.');
     };
     document.getElementById('ew-clear').onclick = () => {
+        if (!isActivated()) { showLicModal(); return; }
         if (S.excelData.length === 0) { msg('⚠️ Excel yüklenmedi!'); return; }
         if (confirm('Seçili kategorilerdeki tüm girişler SİLİNECEKTİR. Devam?')) {
             S.active=true; S.mode='clear';
-            S.currentIndex = -1;
-            loopBusy = false;
+            S.currentIndex = -1; loopBusy = false;
             save(); runLoop();
         }
     };
@@ -503,12 +465,10 @@
     };
 
 
-    /* ── Ana Döngü ───────────────────────────────────────────── */
-    let loopBusy = false;  // çakışan çağrıları önler
+    let loopBusy = false;
     async function runLoop() {
         if (loopBusy || !S.active || S.paused) return;
         loopBusy = true;
-
 
         const btns = [...document.querySelectorAll('button[id^="btnOpen"]')];
         const rows = btns.map(b=>b.closest('tr')).filter(Boolean);
@@ -521,16 +481,13 @@
 
         S.currentIndex++;
 
-        /* Şube bitti */
         if (S.currentIndex >= rows.length) {
             if (S.autoNextClass) {
-
                 const sel = document.getElementById('cmbSubeler');
                 if (sel && sel.selectedIndex < sel.options.length-1) {
                     sel.selectedIndex++;
                     sel.dispatchEvent(new Event('change',{bubbles:true}));
                     if (window.$?.fn?.select2) $(sel).trigger('change.select2');
-                    // Panel dropdown senkronu
                     const pd = document.getElementById('ew-sube');
                     if (pd) pd.selectedIndex = sel.selectedIndex;
                     S.currentIndex=-1; save();
@@ -542,7 +499,6 @@
                     return;
                 }
             }
-            // Temizle modunda sadece mevcut sınıf temizlenir, sonrakine geçilmez
             msg(S.mode==='clear' ? '✅ Sınıf temizlendi! 🏁' : '✅ TAMAMLANDI! 🏁');
             S.active=false; S.paused=false; loopBusy=false; save();
             updateStartBtn();
@@ -560,13 +516,11 @@
 
         btnOp.click();
 
-        // İçerik yüklenene kadar bekle (maks 4sn)
         for (let w=0; w<6; w++) {
             await wait(200);
             if (document.querySelectorAll('input[type="radio"]').length > 0) break;
         }
 
-        // Tema başlığı seçici — birden fazla ihtimali dene
         let headers = [...document.querySelectorAll('a.text-light')];
         if (!headers.length) headers = [...document.querySelectorAll('[data-toggle="collapse"] a, a[data-toggle="collapse"]')];
         if (!headers.length) headers = [...document.querySelectorAll('.card-header a, .accordion-header a')];
@@ -575,41 +529,27 @@
         const targetIdxs = parseRange(S.catRange||'1');
         let changed      = false;
 
-        msg(`🔄 ${sNo} | ${headers.length} tema, ${document.querySelectorAll('input[type="radio"]').length} radio bulundu`);
+        msg(`🔄 ${sNo} | İşleniyor…`);
 
-        // Modal/diyalog otomatik onaylama
         function autoModalClick() {
             if (!S.autoConfirm) return false;
-            // Bootstrap Modals & Custom
-            const btnSelectors = [
-                '.modal.show .btn-primary', '.modal.show .btn-success', '.modal.show .btn-info',
-                '.modal.show button[data-dismiss="modal"]:not(.close)',
-                '.swal2-confirm', '.swal-button--confirm', '.ajs-ok', '.ajs-button.ajs-ok'
-            ];
+            const btnSelectors = ['.modal.show .btn-primary', '.modal.show .btn-success', '.swal2-confirm', '.ajs-ok'];
             for (const sel of btnSelectors) {
                 const btn = document.querySelector(sel);
                 if (btn && btn.offsetParent !== null) { btn.click(); return true; }
             }
-            // Text tabanlı arama (Tamam, OK, Evet)
-            const textBtns = [...document.querySelectorAll('.modal.show button, .alert button, .dialog button, button')]
-                .filter(b => /Tamam|OK|Evet|Kapat|Onayla/i.test(b.innerText || b.textContent));
-            if (textBtns.length > 0 && textBtns[0].offsetParent !== null) {
-                textBtns[0].click(); return true;
-            }
             return false;
         }
 
-        // Onay polling'i: Belirli bir süre boyunca modal kovalayan yardımcı
         async function pollAutoConfirm(durationS = 2) {
             if (!S.autoConfirm) return;
             const end = Date.now() + durationS * 1000;
             while (Date.now() < end) {
                 if (autoModalClick()) break;
-                await wait(150); // 250 -> 150 (daha sık kontrol)
+                await wait(150);
             }
         }
 
-        // Eğer hiç başlık bulunamadıysa → tüm sayfadaki radio butonlarla çalış
         const noHeaders = headers.length === 0;
 
         for (const idx of targetIdxs) {
@@ -618,94 +558,62 @@
                 if (idx >= headers.length) continue;
                 const h = headers[idx];
                 if (h.classList.contains('collapsed')) { h.click(); await wait(300); }
-                cont = h.closest('.card')?.querySelector('.collapse')
-                    || h.closest('.card')
-                    || h.parentElement?.nextElementSibling;
+                cont = h.closest('.card')?.querySelector('.collapse') || h.closest('.card') || h.parentElement?.nextElementSibling;
             }
-            // cont=null → tüm sayfa, cont=el → sadece o bölüm
             const searchIn = cont || document;
             if (!searchIn) continue;
 
-
             if (S.mode==='fill') {
-                // Her tema için o sütunun min/max değerleri ile temel seviye hesapla
                 const colVals = S.excelData.map(d => d.vals[idx] ?? d.vals[0] ?? 0);
-                const minV    = Math.min(...colVals);
-                const maxV    = Math.max(...colVals);
-                const stuVal  = student.vals[idx] ?? student.vals[0] ?? 0;
-                const r       = maxV > minV ? (stuVal - minV) / (maxV - minV) : 1;
+                const minV = Math.min(...colVals);
+                const maxV = Math.max(...colVals);
+                const stuVal = student.vals[idx] ?? student.vals[0] ?? 0;
+                const r = maxV > minV ? (stuVal - minV) / (maxV - minV) : 1;
                 const baseLvl = r < .25 ? 1 : r < .50 ? 2 : r < .75 ? 3 : 4;
 
-                // Her bir madde (soru) grubu için ayrı varyasyon uygula
                 const allRadios = searchIn.querySelectorAll('input[type="radio"]');
                 const stems = new Set();
                 allRadios.forEach(rd => {
                     const id = rd.id;
                     const lastUnder = id.lastIndexOf('_');
-                    if (lastUnder !== -1) {
-                        stems.add(id.substring(0, lastUnder));
-                    }
+                    if (lastUnder !== -1) stems.add(id.substring(0, lastUnder));
                 });
 
                 stems.forEach(stem => {
                     const lvl = getRandLvl(baseLvl);
                     const targetId = `${stem}_${lvl}`;
                     const rd = document.getElementById(targetId);
-                    if (rd && !rd.checked) {
-                        rd.click();
-                        changed = true;
-                    }
+                    if (rd && !rd.checked) { rd.click(); changed = true; }
                 });
-
-                msg(`🔄 ${sNo} | Tema ${idx+1}: puan=${stuVal.toFixed(1)} → ★${baseLvl} (varyanslı)`);
             } else {
-                const temizleBtns = [
-                    ...searchIn.querySelectorAll('button'),
-                    ...tr.querySelectorAll('button')
-                ].filter(b => /temizle/i.test(b.textContent || b.innerText));
+                const temizleBtns = [...searchIn.querySelectorAll('button'), ...tr.querySelectorAll('button')].filter(b => /temizle/i.test(b.textContent || b.innerText));
                 for (const b of temizleBtns) {
-                    b.click();
-                    await wait(150);
-                    await pollAutoConfirm(1.2);
-                    changed = true;
-                    break; 
+                    b.click(); await wait(150); await pollAutoConfirm(1.2);
+                    changed = true; break; 
                 }
             }
         }
 
         if (changed) {
             await wait(400);
-            const kaydet = document.getElementById('OOMToolbarActive1_btnKaydet')
-                        || document.querySelector('button[id*="btnKaydet"]')
-                        || document.querySelector('input[id*="btnKaydet"]');
+            const kaydet = document.getElementById('OOMToolbarActive1_btnKaydet') || document.querySelector('button[id*="btnKaydet"]');
             if (kaydet) {
                 msg('💾 Kaydediliyor…');
                 kaydet.click();
-                await wait(300); // 400 -> 300
-                await pollAutoConfirm(2.5); // 4 -> 2.5
+                await wait(300);
+                await pollAutoConfirm(2.5);
                 loopBusy = false;
-                if (S.autoConfirm) {
-                    setTimeout(runLoop, 1200);
-                } else {
+                if (S.autoConfirm) { setTimeout(runLoop, 1200); }
+                else {
                     S.waiting = true; save();
-                    msg('⏸ Kaydet onaylanınca ➡ DEVAM ET\'e basın');
+                    msg('⏸ Bekleniyor…');
                     const devamEl = document.getElementById('ew-devam');
                     if (devamEl) devamEl.style.display = 'block';
                 }
-            } else {
-                msg('⚠️ Kaydet butonu bulunamadı!');
-                loopBusy = false;
-                setTimeout(runLoop, 700);
-            }
-        } else {
-            msg('ℹ️ Değişiklik yok.');
-            loopBusy = false;
-            setTimeout(runLoop, 350);
-        }
-
+            } else { loopBusy = false; setTimeout(runLoop, 700); }
+        } else { loopBusy = false; setTimeout(runLoop, 350); }
     }
 
-    /* ── Oto-devam (sayfa yenileme sonrası) ──────────────────── */
     const resume = () => { if (S.active && S.excelData.length>0) setTimeout(runLoop, 1800); };
     if (document.readyState==='complete') resume();
     else window.addEventListener('load', resume);

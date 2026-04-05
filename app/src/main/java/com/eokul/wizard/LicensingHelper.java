@@ -6,14 +6,14 @@ public class LicensingHelper {
     private static final String ALPHA = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
     private static final int SALT = 0x7A59;
 
-    public static String generateKey() {
+    public static String generateKey(String androidId) {
         StringBuilder b = new StringBuilder();
         Random r = new Random();
         for (int i = 0; i < 12; i++) {
             b.append(ALPHA.charAt(r.nextInt(ALPHA.length())));
         }
         String body = b.toString();
-        String chk = calculateLicHash(body);
+        String chk = calculateLicHash(body, androidId);
         String full = body + chk;
         
         // Format: XXXX-XXXX-XXXX-XXXX
@@ -23,9 +23,15 @@ public class LicensingHelper {
                full.substring(12, 16);
     }
 
-    private static String calculateLicHash(String body) {
+    public static String calculateLicHash(String body, String androidId) {
         long h = SALT;
-        for (char c : body.toCharArray()) {
+        if (androidId != null) {
+            for (char c : androidId.toUpperCase().toCharArray()) {
+                h += (int) c;
+                h = (h * 31) & 0xFFFFFF;
+            }
+        }
+        for (char c : body.toUpperCase().toCharArray()) {
             h += (int) c;
             h = (h * 31) & 0xFFFFFF;
         }

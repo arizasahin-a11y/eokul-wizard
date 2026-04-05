@@ -15,6 +15,9 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.JavascriptInterface;
+import android.provider.Settings;
+import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -64,6 +67,26 @@ public class MainActivity extends Activity {
 
         webView.setWebViewClient(new EokulWebViewClient());
         webView.setWebChromeClient(new EokulWebChromeClient());
+        webView.addJavascriptInterface(new WebAppInterface(), "Android");
+    }
+
+    public class WebAppInterface {
+        @JavascriptInterface
+        public void openWhatsApp(String number, String message) {
+            try {
+                String url = "https://api.whatsapp.com/send?phone=" + number + "&text=" + Uri.encode(message);
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setData(Uri.parse(url));
+                i.setPackage("com.whatsapp");
+                startActivity(i);
+            } catch (Exception e) {
+                Toast.makeText(MainActivity.this, "WhatsApp yüklü değil!", Toast.LENGTH_SHORT).show();
+                // Alternatif: Browser üzerinden aç
+                String url = "https://wa.me/" + number + "?text=" + Uri.encode(message);
+                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(i);
+            }
+        }
     }
 
     // e-okul sayfası mı?
@@ -106,6 +129,7 @@ public class MainActivity extends Activity {
             super.onPageFinished(view, url);
             Log.d(TAG, "onPageFinished: " + url);
             if (isEokulPage(url)) {
+                injectAndroidId(view);
                 injectScripts(view);
             }
         }
@@ -222,5 +246,10 @@ public class MainActivity extends Activity {
         } else {
             super.onBackPressed();
         }
+    }
+
+    private void injectAndroidId(WebView view) {
+        String androidId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        view.evaluateJavascript("window.ANDROID_ID = '" + androidId + "';", null);
     }
 }
