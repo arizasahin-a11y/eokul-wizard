@@ -182,7 +182,7 @@
         document.body.appendChild(fab);
     }
 
-    /* ── Hedef sayfa değilse: tek tıkla, otomatik iki adımlı nav ── */
+    /* ── Hedef sayfa değilse: Uyarı veya Navigasyon ── */
     if (!IS_TARGET) {
         const OO_URL = 'https://e-okul.meb.gov.tr/OrtaOgretim/OrtaOgretim.aspx';
 
@@ -193,6 +193,37 @@
         }
 
         fab.onclick = () => {
+             // Giriş ekranında mı kontrol et (MEB standart login sayfası)
+             if (window.location.href.toLowerCase().includes('login.aspx') || 
+                 document.getElementById('txtKullaniciAd') || 
+                 document.querySelector('input[type="password"]')) {
+                 
+                 let ov = document.getElementById('ew-alert-ov');
+                 if (!ov) {
+                     ov = document.createElement('div'); ov.id='ew-alert-ov';
+                     Object.assign(ov.style, {
+                         position:'fixed', inset:'0', background:'rgba(0,0,0,0.85)',
+                         zIndex:'999999999', display:'flex', alignItems:'center', justifyContent:'center'
+                     });
+                     ov.innerHTML = `
+                         <div style="background:#1e293b; color:#f1f5f9; padding:24px; border-radius:16px;
+                             box-shadow:0 20px 40px rgba(0,0,0,0.5); width:280px; text-align:center;
+                             border:1px solid #334155; font-family:sans-serif;">
+                             <div style="font-size:32px; margin-bottom:12px">🔑</div>
+                             <div style="font-size:15px; font-weight:700; margin-bottom:16px">Önce e-Okula Giriş yapınız</div>
+                             <button id="ew-alert-ok" style="width:100%; padding:12px; border-radius:8px; border:none;
+                                 background:linear-gradient(135deg,#10b981,#059669); color:white; font-weight:700; cursor:pointer">
+                                 Tamam
+                             </button>
+                         </div>`;
+                     document.body.appendChild(ov);
+                     document.getElementById('ew-alert-ok').onclick = () => ov.style.display='none';
+                 }
+                 ov.style.display = 'flex';
+                 return;
+             }
+
+            // Giriş yapılmışsa (veya login sayfası değilse) navigasyona devam et
             window.name = 'ew_nav'; 
             const link = [...document.querySelectorAll('a[href]')].find(a =>
                 /OrtaO[gğ]retim/i.test(a.href) && !a.href.includes('OKL')
