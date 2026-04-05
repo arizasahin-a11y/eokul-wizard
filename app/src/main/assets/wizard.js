@@ -531,6 +531,10 @@
                 }
             }
             msg(S.mode==='clear' ? '✅ Sınıf temizlendi! 🏁' : '✅ TAMAMLANDI! 🏁');
+            // Son öğrencinin kaydı için modal gelmiş olabilir, temizleme bitmeden bekle
+            if (S.autoConfirm) {
+                await pollAutoConfirm(3.0);
+            }
             S.active=false; S.paused=false; loopBusy=false; save();
             updateStartBtn();
             return;
@@ -564,10 +568,34 @@
 
         function autoModalClick() {
             if (!S.autoConfirm) return false;
-            const btnSelectors = ['.modal.show .btn-primary', '.modal.show .btn-success', '.swal2-confirm', '.ajs-ok'];
-            for (const sel of btnSelectors) {
-                const btn = document.querySelector(sel);
-                if (btn && btn.offsetParent !== null) { btn.click(); return true; }
+
+            // E-Okul'un kullandığı veya kullanabileceği tüm potansiyel modal kılıfları
+            const modalContainers = document.querySelectorAll(
+                '.modal, .swal2-container, .sweet-alert, .ajs-dialog, .alert, [role="dialog"], .ui-dialog, .bootbox'
+            );
+
+            for (const modal of modalContainers) {
+                // Eğer ekranda görünmüyorsa atla
+                if (modal.offsetParent === null && window.getComputedStyle(modal).display === 'none') continue; 
+                
+                // Modalın içindeki tüm butonlar
+                const btns = modal.querySelectorAll('button, input[type="button"], input[type="submit"], a.btn');
+                for (const b of btns) {
+                     if (b.offsetParent === null) continue;
+                     
+                     // Butonun yazısında veya class'ında onay anlamına gelen bir şey var mı?
+                     const txt = ((b.textContent||'') + ' ' + (b.value||'') + ' ' + (b.innerText||'')).toLowerCase();
+                     const btnClass = (typeof b.className === 'string' ? b.className : '').toLowerCase();
+
+                     if (txt.includes('tamam') || txt.includes('evet') || 
+                         txt.includes('onayla') || txt.includes('kapat') || 
+                         txt.includes('ok') || 
+                         btnClass.includes('confirm') || btnClass.includes('btn-primary') || btnClass.includes('btn-success')) {
+                         
+                         b.click();
+                         return true; // Modal onaylandı
+                     }
+                }
             }
             return false;
         }
@@ -582,6 +610,8 @@
         }
 
         const noHeaders = headers.length === 0;
+        const clickedTemizle = new Set();
+
 
         for (const idx of targetIdxs) {
             let cont = null;
@@ -617,35 +647,64 @@
                     if (rd && !rd.checked) { rd.click(); changed = true; }
                 });
             } else {
-                const temizleBtns = [...searchIn.querySelectorAll('button'), ...tr.querySelectorAll('button')].filter(b => /temizle/i.test(b.textContent || b.innerText));
+                const temizleBtns = [
+                    ...searchIn.querySelectorAll('button, input[type="button"], input[type="submit"]'), 
+                    ...tr.querySelectorAll('button, input[type="button"], input[type="submit"]')
+                ].filter(b => {
+                    const txt = ((b.textContent || '') + ' ' + 
+                                 (b.value || '') + ' ' + (b.title || '') + ' ' + 
+                                 (b.getAttribute('alt') || '') + ' ' + (b.id || '') + ' ' + 
+                                 (typeof b.className === 'string' ? b.className : '')).toLowerCase();
+                    return txt.includes('temizle');
+                });
+                
                 for (const b of temizleBtns) {
-                    b.click(); await wait(150); await pollAutoConfirm(1.2);
-                    changed = true; break; 
+                    if (clickedTemizle.has(b)) continue; 
+                    
+                    clickedTemizle.add(b);
+                    b.click(); 
+                    
+                    // Modalı yakalamak için boşuna 1 saniye beklemesin, yoksa her butonda 1 saniye duraksar.
+                    // Sadece anlık kontrol edip direkt sıradaki butona mermi gibi geçsin.
+                    if (S.autoConfirm) autoModalClick();
+                    await wait(10); 
+                    
+                    changed = true;
                 }
             }
         }
 
         if (changed) {
-            await wait(400);
-            const kaydet = document.getElementById('OOMToolbarActive1_btnKaydet') || document.querySelector('button[id*="btnKaydet"]');
+            // E-okul formunun Temizle sonrası kendini toparlaması (değişkenleri eşitlemesi) için bekleme
+            await wait(400); 
+            const kaydet = document.getElementById('OOMToolbarActive1_btnKaydet') || 
+                           document.querySelector('button[id*="btnKaydet"]') || 
+                           document.querySelector('input[id*="btnKaydet"]') ||
+                           document.querySelector('.btn-success.has-ripple'); // Alternatif kaydet
             if (kaydet) {
                 msg('💾 Kaydediliyor…');
                 kaydet.click();
-                await wait(300);
-                await pollAutoConfirm(2.5);
+                
+                // Kaydet komutunun MEB sunucularına gitmesi için bekleme
+                await wait(500); 
+                
+                // MEB sunucuları bazen yavaş yanıt verebilir, onay kutusunu max 4 saniyeye kadar bekle
+                await pollAutoConfirm(4.0); 
+                
                 loopBusy = false;
-                if (S.autoConfirm) { setTimeout(runLoop, 1200); }
+                // Onay verildikten sonra yeni öğrenciye geçerken sistemin donmaması için yarım saniye nefes payı
+                if (S.autoConfirm) { setTimeout(runLoop, 500); }
                 else {
                     S.waiting = true; save();
                     msg('⏸ Bekleniyor…');
                     const devamEl = document.getElementById('ew-devam');
                     if (devamEl) devamEl.style.display = 'block';
                 }
-            } else { loopBusy = false; setTimeout(runLoop, 700); }
-        } else { loopBusy = false; setTimeout(runLoop, 350); }
+            } else { loopBusy = false; setTimeout(runLoop, 500); } 
+        } else { loopBusy = false; setTimeout(runLoop, 250); } 
     }
 
-    const resume = () => { if (S.active && S.excelData.length>0) setTimeout(runLoop, 1800); };
+    const resume = () => { if (S.active && S.excelData.length>0) setTimeout(runLoop, 500); }; // Sayfa yenilenmesinde kalkış süresi 1800'den 500'e çekildi
     if (document.readyState==='complete') resume();
     else window.addEventListener('load', resume);
 
