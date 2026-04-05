@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e-Okul Sihirbazı | Lisans Oluşturucu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #10b981;
+            --primary-glow: rgba(16, 185, 129, 0.4);
+            --secondary: #3b82f6;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent: #7c3aed;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-y: auto;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #fff, var(--text-dim));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            margin-left: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input {
+            width: 100%;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 14px 16px;
+            padding-right: 90px; /* Prevent overlap with Paste button */
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-paste {
+            position: absolute;
+            right: 8px;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--secondary);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .btn-paste:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), #059669);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result-area {
+            margin-top: 32px;
+            padding-top: 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: none;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .key-display {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            border: 2px dashed rgba(16, 185, 129, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .key-display:hover {
+            border-color: var(--primary);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .key-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 2px;
+        }
+
+        .copy-hint {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 8px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* History styles */
+        .history-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 13px;
+        }
+
+        .history-table th {
+            text-align: left;
+            color: var(--text-dim);
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+        }
+
+        .history-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .history-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .empty-label {
+            text-align: center;
+            color: var(--text-dim);
+            padding: 32px;
+            font-style: italic;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px 12px;
+                gap: 16px;
+            }
+
+            .card, .history-card {
+                padding: 24px 16px;
+                border-radius: 20px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .subtitle {
+                font-size: 13px;
+                margin-bottom: 24px;
+            }
+
+            .key-text {
+                font-size: 16px;
+                letter-spacing: 1px;
+            }
+
+            .history-table th, .history-table td {
+                padding: 10px 8px;
+                font-size: 11px;
+            }
+
+            .btn-delete {
+                padding: 4px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+            <h1>Lisans Anahtarı Paneli</h1>
+            <p class="subtitle">Cihaz ID bilgisini girerek anahtar oluşturun</p>
+
+            <div class="input-group">
+                <label for="customerName">Müşteri Ad Soyad</label>
+                <div class="input-wrapper">
+                    <input type="text" id="customerName" placeholder="Örn: Ali Yılmaz" autocomplete="name">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="androidId">Android ID (Cihaz Kodu)</label>
+                <div class="input-wrapper">
+                    <input type="text" id="androidId" placeholder="Örn: 8f2a1b9c3e4d5f6a" autocomplete="off">
+                    <button class="btn-paste" id="pasteBtn">YAPIŞTIR</button>
+                </div>
+            </div>
+
+            <button class="btn" id="generateBtn">
+                <span>Anahtar Oluştur</span>
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                </svg>
+            </button>
+
+            <div class="result-area" id="resultArea">
+                <label id="resultLabel">Oluşturulan Lisans Anahtarı</label>
+                <div class="key-display" id="keyTarget">
+                    <div class="key-text" id="keyValue">XXXX-XXXX-XXXX-XXXX</div>
+                    <div class="copy-hint">Kopyalamak için tıklayın</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-card">
+            <h1>Lisans Geçmişi</h1>
+            <div style="overflow-x: auto;">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Tarih / Saat</th>
+                            <th>Müşteri</th>
+                            <th>Cihaz ID</th>
+                            <th>Anahtar</th>
+                            <th style="text-align: right;">İŞLEM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <!-- History injected here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Export button -->
+            <button class="btn" id="exportBtn" style="margin-top: 24px; background: rgba(59, 130, 246, 0.1); color: var(--secondary); border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: none;">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                <span>Verileri JSON Olarak İndir (GitHub)</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Anahtar kopyalandı!</div>
+
+    <script>
+        const ALPHA = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const SALT  = 0x7A59;
+
+        function calculateLicHash(body, androidId) {
+            let h = SALT;
+            const aid = (androidId || "").toUpperCase();
+            for (let i = 0; i < aid.length; i++) {
+                h += aid.charCodeAt(i);
+                h = (h * 31) & 0xFFFFFF;
+            }
+            const b = body.toUpperCase();
+            for (let i = 0; i < b.length; i++) {
+                h += b.charCodeAt(i);
+                h = (h * 31) & 0xFFFFFF;
+            }
+            
+            const shifts = [20, 15, 10, 5];
+            let res = "";
+            for (const s of shifts) {
+                res += ALPHA[(h >> s) & 0x1F];
+            }
+            return res;
+        }
+
+        function generateKey(androidId) {
+            let body = "";
+            for (let i = 0; i < 12; i++) {
+                body += ALPHA[Math.floor(Math.random() * ALPHA.length)];
+            }
+            const chk = calculateLicHash(body, androidId);
+            const full = body + chk;
+            
+            return full.substring(0, 4) + "-" + 
+                   full.substring(4, 8) + "-" + 
+                   full.substring(8, 12) + "-" + 
+                   full.substring(12, 16);
+        }
+
+        const btn = document.getElementById('generateBtn');
+        const customerInput = document.getElementById('customerName');
+        const input = document.getElementById('androidId');
+        const exportBtn = document.getElementById('exportBtn');
+        const resultArea = document.getElementById('resultArea');
+        const resultLabel = document.getElementById('resultLabel');
+        const keyValue = document.getElementById('keyValue');
+        const keyTarget = document.getElementById('keyTarget');
+        const toast = document.getElementById('toast');
+
+        btn.onclick = () => {
+            const aid = input.value.trim();
+            const name = customerInput.value.trim();
+            
+            if (!name) {
+                customerInput.style.borderColor = '#ef4444';
+                setTimeout(() => customerInput.style.borderColor = '#334155', 2000);
+                return;
+            }
+            if (!aid) {
+                input.style.borderColor = '#ef4444';
+                setTimeout(() => input.style.borderColor = '#334155', 2000);
+                return;
+            }
+
+            const key = generateKey(aid);
+            keyValue.textContent = key;
+            resultLabel.textContent = "Oluşturulan Lisans Anahtarı";
+            resultArea.style.display = 'block';
+            
+            saveRecord(aid, key, name);
+
+            // Auto-copy
+            navigator.clipboard.writeText(key).then(() => {
+                toast.textContent = "Anahtar oluşturuldu ve kopyalandı!";
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+            });
+
+            // Pulse animation
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => btn.style.transform = '', 100);
+        };
+
+        function checkExistingLicence() {
+            const aid = input.value.trim();
+            if (!aid) {
+                resultArea.style.display = 'none';
+                return;
+            }
+
+            const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+            const existing = history.find(item => item.aid === aid);
+
+            if (existing) {
+                keyValue.textContent = existing.key;
+                resultLabel.textContent = "Geçmişte Verilen Lisans Bulundu";
+                resultArea.style.display = 'block';
+                
+                // Highlight result area briefly
+                resultArea.style.animation = 'none';
+                void resultArea.offsetWidth; // trigger reflow
+                resultArea.style.animation = 'fadeIn 0.5s ease forwards';
+            } else {
+                // If we were showing an "old" license and now the ID is different, hide it
+                if (resultLabel.textContent === "Geçmişte Verilen Lisans Bulundu") {
+                    resultArea.style.display = 'none';
+                }
+            }
+        }
+
+        input.oninput = checkExistingLicence;
+
+        const STORAGE_KEY = "lic_history";
+
+        function saveRecord(aid, key, userName) {
+            const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+            const now = new Date();
+            const timestamp = now.toLocaleString('tr-TR');
+            
+            history.unshift({ aid, key, timestamp, userName: userName || "-" });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const body = document.getElementById('historyBody');
+            const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+            
+            if (history.length === 0) {
+                body.innerHTML = '<tr><td colspan="5" class="empty-label">Henüz kayıt bulunmuyor.</td></tr>';
+                return;
+            }
+
+            body.innerHTML = history.map((item, index) => `
+                <tr>
+                    <td style="white-space: nowrap; font-family: 'JetBrains Mono', monospace;">${item.timestamp}</td>
+                    <td style="font-weight: 600;">${item.userName || "-"}</td>
+                    <td style="font-family: 'JetBrains Mono', monospace; color: var(--text-dim);">${item.aid}</td>
+                    <td style="font-family: 'JetBrains Mono', monospace; color: var(--primary); font-weight: 700;">${item.key}</td>
+                    <td style="text-align: right;">
+                        <button class="btn-delete" onclick="deleteRecord(${index})">SİL</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteRecord(index) {
+            if (!confirm('Bu kaydı silmek istediğinize emin misiniz?')) return;
+            const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+            history.splice(index, 1);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+            renderHistory();
+        }
+
+        // Initialize history
+        renderHistory();
+
+        keyTarget.onclick = () => {
+            const text = keyValue.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                toast.textContent = "Anahtar kopyalandı!";
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+            });
+        };
+
+        // Paste support
+        const pasteBtn = document.getElementById('pasteBtn');
+        pasteBtn.onclick = async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    input.value = text.trim();
+                    input.focus();
+                    checkExistingLicence();
+                    toast.textContent = "ID yapıştırıldı!";
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 2000);
+                }
+            } catch (err) {
+                console.error("Paste failed: ", err);
+                toast.textContent = "Yapıştırma izni reddedildi!";
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+            }
+        };
+
+        // Enter key support
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') btn.click();
+        };
+        customerInput.onkeydown = (e) => {
+            if (e.key === 'Enter') input.focus();
+        };
+
+        // Export Functionality
+        exportBtn.onclick = () => {
+            const history = localStorage.getItem(STORAGE_KEY);
+            if (!history || history === "[]") {
+                toast.textContent = "Dışa aktarılacak veri yok!";
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+                return;
+            }
+
+            const blob = new Blob([history], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const now = new Date().toISOString().split('T')[0];
+            
+            a.href = url;
+            a.download = `eokul_lisans_gecmisi_${now}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            toast.textContent = "Veriler JSON olarak indirildi!";
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        };
+    </script>
+</body>
+</html>
