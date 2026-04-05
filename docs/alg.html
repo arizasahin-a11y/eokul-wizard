@@ -509,7 +509,13 @@
             }
         }
 
-        input.oninput = checkExistingLicence;
+        input.oninput = () => {
+            let val = input.value;
+            if (val.toLowerCase().includes("cihaz id:")) {
+                input.value = val.replace(/^.*cihaz id:\s*/i, "").trim();
+            }
+            checkExistingLicence();
+        };
 
         const STORAGE_KEY = "lic_history";
 
@@ -571,7 +577,11 @@
             try {
                 const text = await navigator.clipboard.readText();
                 if (text) {
-                    input.value = text.trim();
+                    let cleaned = text.trim();
+                    if (cleaned.toLowerCase().includes("cihaz id:")) {
+                        cleaned = cleaned.replace(/^.*cihaz id:\s*/i, "").trim();
+                    }
+                    input.value = cleaned;
                     input.focus();
                     checkExistingLicence();
                     toast.textContent = "ID yapıştırıldı!";
