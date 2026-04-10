@@ -1,0 +1,3 @@
+A:\TOOLS\kodlama\km\eokul\windows\obj\Release\net8.0-windows\win-x64\EokulWizard.csproj.AssemblyReference.cache
+A:\TOOLS\kodlama\km\eokul\windows\obj\Release\net8.0-windows\win-x64\EokulWizard_Content.g.cs
+A:\TOOLS\kodlama\km\eokul\windows\obj\Release\net8.0-windows\win-x64\EokulWizard_MarkupCompile.cache

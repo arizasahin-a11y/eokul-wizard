@@ -1,0 +1,18 @@
+<Window x:Class="EokulWizard.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2000/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2000/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="⚡ e-Okul Gelişim Düzeyi Sihirbazı" Height="700" Width="1000"
+        WindowStartupLocation="CenterScreen"
+        Background="#0F172A">
+    <Grid>
+        <wv2:WebView2 x:Name="webView" Source="https://e-okul.meb.gov.tr/giris.aspx" />
+        
+        <Border x:Name="LoadingOverlay" Background="#0F172A" Visibility="Collapsed">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="⚡" FontSize="48" HorizontalAlignment="Center" />
+                <TextBlock Text="Yükleniyor..." Foreground="White" FontSize="18" Margin="0,10" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
