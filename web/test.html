@@ -102,38 +102,20 @@
 
         function testBookmarklet() {
             log('Test başlatılıyor...', 'info');
+            log('Standalone script yükleniyor...', 'info');
             
-            // SheetJS yükle
-            log('SheetJS yükleniyor...', 'info');
-            const s = document.createElement('script');
-            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-            
-            s.onload = function() {
-                log('✅ SheetJS yüklendi', 'success');
-                
-                // Wizard script yükle
-                log('Wizard script yükleniyor...', 'info');
-                const w = document.createElement('script');
-                w.src = 'https://arizasahin-a11y.github.io/eokul-wizard/web/wizard-inject.js';
-                
-                w.onload = function() {
-                    log('✅ Wizard script yüklendi', 'success');
+            fetch('https://arizasahin-a11y.github.io/eokul-wizard/web/wizard-standalone.js')
+                .then(r => r.text())
+                .then(code => {
+                    log('✅ Script indirildi, boyut: ' + code.length + ' byte', 'success');
+                    log('Script çalıştırılıyor...', 'info');
+                    eval(code);
                     log('✅ Test başarılı! Sağ altta ⚡ ikon görünmeli.', 'success');
-                };
-                
-                w.onerror = function() {
-                    log('❌ Wizard script yüklenemedi!', 'error');
+                })
+                .catch(err => {
+                    log('❌ Script yüklenemedi: ' + err.message, 'error');
                     log('GitHub Pages aktif değil olabilir.', 'error');
-                };
-                
-                document.head.appendChild(w);
-            };
-            
-            s.onerror = function() {
-                log('❌ SheetJS yüklenemedi!', 'error');
-            };
-            
-            document.head.appendChild(s);
+                });
         }
 
         // Sayfa yüklendiğinde bilgi ver
