@@ -1,0 +1,148 @@
+/* e-Okul Sihirbazı - Content Styles */
+
+@keyframes ewPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+    }
+    50% {
+        transform: scale(1.08);
+        box-shadow: 0 0 35px rgba(16, 185, 129, 0.7);
+    }
+}
+
+#ew-fab {
+    animation: ewPulse 2s ease-in-out infinite !important;
+    background: linear-gradient(135deg, #10b981, #3b82f6) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+#ew-fab:hover {
+    animation: none !important;
+    transform: scale(1.15) !important;
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.8) !important;
+    transition: 0.2s !important;
+}
+
+#ew-fab:active {
+    transform: scale(0.95) !important;
+}
+
+#ew-panel {
+    transition: opacity 0.25s, transform 0.25s !important;
+    transform-origin: bottom right !important;
+}
+
+#ew-panel.ew-hidden {
+    opacity: 0 !important;
+    transform: scale(0.88) !important;
+    pointer-events: none !important;
+}
+
+.ew-sel {
+    width: 100% !important;
+    background: #334155 !important;
+    border: 1px solid #475569 !important;
+    color: #f1f5f9 !important;
+    padding: 12px 10px !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+    margin-bottom: 8px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+}
+
+.ew-btn {
+    border: none !important;
+    border-radius: 10px !important;
+    color: white !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    padding: 16px !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    min-height: 48px !important;
+}
+
+.ew-btn:active {
+    transform: scale(0.98) !important;
+}
+
+.ew-inp {
+    width: 100% !important;
+    background: #334155 !important;
+    border: 1px solid #475569 !important;
+    color: #f1f5f9 !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+    box-sizing: border-box !important;
+}
+
+.ew-lbl {
+    font-size: 12px !important;
+    color: #94a3b8 !important;
+    display: block !important;
+    margin-bottom: 4px !important;
+    margin-top: 10px !important;
+}
+
+input[type="file"] {
+    font-size: 14px !important;
+    padding: 10px !important;
+}
+
+input[type="checkbox"] {
+    width: 22px !important;
+    height: 22px !important;
+    cursor: pointer !important;
+}
+
+/* Mobil optimizasyonlar */
+@media (max-width: 480px) {
+    #ew-fab {
+        width: 56px !important;
+        height: 56px !important;
+        font-size: 28px !important;
+        bottom: 16px !important;
+        right: 16px !important;
+    }
+    
+    #ew-panel {
+        bottom: 80px !important;
+        right: 8px !important;
+        left: 8px !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+    
+    #ew-panel > div {
+        width: 100% !important;
+        padding: 14px !important;
+    }
+    
+    .ew-btn {
+        font-size: 15px !important;
+        padding: 14px !important;
+    }
+    
+    .ew-sel, .ew-inp {
+        font-size: 16px !important;
+        padding: 12px !important;
+    }
+    
+    #ew-help {
+        font-size: 12px !important;
+    }
+}
+
+/* Yatay mod */
+@media (max-width: 768px) and (orientation: landscape) {
+    #ew-panel {
+        max-height: 85vh !important;
+    }
+}
