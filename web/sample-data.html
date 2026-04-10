@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Örnek Excel Oluştur</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .info-box ul {
+            margin-left: 20px;
+            color: #555;
+        }
+        .info-box li {
+            margin: 5px 0;
+        }
+        .preview {
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Örnek Excel Dosyası Oluştur</h1>
+        <p>e-Okul Sihirbazı için kullanabileceğiniz örnek bir Excel dosyası oluşturun ve indirin.</p>
+
+        <div class="info-box">
+            <h3>📋 Excel Formatı</h3>
+            <ul>
+                <li><strong>A Sütunu:</strong> Sıra numarası</li>
+                <li><strong>B Sütunu:</strong> Sınıf (örn: 9-A)</li>
+                <li><strong>C Sütunu:</strong> Öğrenci Numarası (Zorunlu)</li>
+                <li><strong>D Sütunu:</strong> Ad Soyad</li>
+                <li><strong>E ve sonrası:</strong> Tema puanları (0-100)</li>
+            </ul>
+        </div>
+
+        <div class="preview">
+            <h3 style="margin-bottom: 10px; color: #333;">Önizleme:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sıra</th>
+                        <th>Sınıf</th>
+                        <th>Öğrenci No</th>
+                        <th>Ad Soyad</th>
+                        <th>Tema 1</th>
+                        <th>Tema 2</th>
+                        <th>Tema 3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>9-A</td>
+                        <td>100001</td>
+                        <td>Ali Yıldız</td>
+                        <td>85</td>
+                        <td>90</td>
+                        <td>78</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>9-A</td>
+                        <td>100002</td>
+                        <td>Ayşe Kaya</td>
+                        <td>65</td>
+                        <td>70</td>
+                        <td>55</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>9-A</td>
+                        <td>100003</td>
+                        <td>Mehmet Demir</td>
+                        <td>92</td>
+                        <td>88</td>
+                        <td>95</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>9-A</td>
+                        <td>100004</td>
+                        <td>Fatma Şahin</td>
+                        <td>45</td>
+                        <td>50</td>
+                        <td>48</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>9-A</td>
+                        <td>100005</td>
+                        <td>Ahmet Yılmaz</td>
+                        <td>78</td>
+                        <td>82</td>
+                        <td>75</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <button class="btn" onclick="generateExcel()">
+            📥 Örnek Excel Dosyasını İndir
+        </button>
+
+        <p style="margin-top: 20px; font-size: 13px; color: #999; text-align: center;">
+            İndirilen dosyayı düzenleyerek kendi öğrenci listenizi oluşturabilirsiniz.
+        </p>
+    </div>
+
+    <script>
+        function generateExcel() {
+            // Örnek veri oluştur
+            const data = [
+                ['Sıra', 'Sınıf', 'Öğrenci No', 'Ad Soyad', 'Tema 1', 'Tema 2', 'Tema 3'],
+                [1, '9-A', '100001', 'Ali Yıldız', 85, 90, 78],
+                [2, '9-A', '100002', 'Ayşe Kaya', 65, 70, 55],
+                [3, '9-A', '100003', 'Mehmet Demir', 92, 88, 95],
+                [4, '9-A', '100004', 'Fatma Şahin', 45, 50, 48],
+                [5, '9-A', '100005', 'Ahmet Yılmaz', 78, 82, 75],
+                [6, '9-A', '100006', 'Zeynep Arslan', 88, 85, 90],
+                [7, '9-A', '100007', 'Can Özdemir', 72, 68, 75],
+                [8, '9-A', '100008', 'Elif Çelik', 95, 92, 98],
+                [9, '9-A', '100009', 'Burak Koç', 58, 62, 55],
+                [10, '9-A', '100010', 'Selin Aydın', 82, 78, 85],
+                [11, '9-A', '100011', 'Emre Kara', 68, 72, 65],
+                [12, '9-A', '100012', 'Deniz Yıldırım', 90, 88, 92],
+                [13, '9-A', '100013', 'Merve Aksoy', 75, 80, 72],
+                [14, '9-A', '100014', 'Kerem Polat', 52, 48, 55],
+                [15, '9-A', '100015', 'Gizem Şen', 86, 90, 83]
+            ];
+
+            // Workbook oluştur
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+
+            // Sütun genişliklerini ayarla
+            ws['!cols'] = [
+                { wch: 6 },  // Sıra
+                { wch: 8 },  // Sınıf
+                { wch: 12 }, // Öğrenci No
+                { wch: 20 }, // Ad Soyad
+                { wch: 10 }, // Tema 1
+                { wch: 10 }, // Tema 2
+                { wch: 10 }  // Tema 3
+            ];
+
+            // Worksheet'i workbook'a ekle
+            XLSX.utils.book_append_sheet(wb, ws, 'Öğrenci Listesi');
+
+            // Dosyayı indir
+            XLSX.writeFile(wb, 'eokul_ornek_liste.xlsx');
+        }
+    </script>
+</body>
+</html>

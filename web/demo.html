@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e-Okul Sihirbazı - Web Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            line-height: 1.6;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            padding: 80px 20px;
+            text-align: center;
+            border-bottom: 1px solid #334155;
+        }
+
+        .hero h1 {
+            font-size: clamp(32px, 6vw, 56px);
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: clamp(16px, 3vw, 20px);
+            color: #94a3b8;
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: 2px solid #3b82f6;
+        }
+
+        .btn-secondary:hover {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        .section {
+            margin-bottom: 80px;
+        }
+
+        .section h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border-color: #10b981;
+        }
+
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #f1f5f9;
+        }
+
+        .feature-card p {
+            color: #94a3b8;
+            font-size: 15px;
+        }
+
+        .comparison {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px 0;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-column h3 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .comparison-column ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .comparison-column li {
+            padding: 12px 0;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .comparison-column li:last-child {
+            border-bottom: none;
+        }
+
+        .check {
+            color: #10b981;
+            font-size: 20px;
+        }
+
+        .cross {
+            color: #ef4444;
+            font-size: 20px;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .steps {
+            display: grid;
+            gap: 24px;
+        }
+
+        .step {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: #f1f5f9;
+        }
+
+        .step-content p {
+            color: #94a3b8;
+            font-size: 15px;
+        }
+
+        .alert {
+            background: rgba(251, 191, 36, 0.1);
+            border: 2px solid rgba(251, 191, 36, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .alert-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .alert-content h3 {
+            color: #fbbf24;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .alert-content p {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .footer {
+            background: #1e293b;
+            border-top: 1px solid #334155;
+            padding: 40px 20px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .footer a {
+            color: #10b981;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>⚡ e-Okul Sihirbazı</h1>
+        <p>Excel'den e-Okul'a otomatik Gelişim Düzeyi girişi. Saatler süren işlemi dakikalara indirin.</p>
+        <div class="cta-buttons">
+            <a href="index.html" class="btn btn-primary">
+                <span>🚀</span>
+                <span>Web Uygulamasını Dene</span>
+            </a>
+            <a href="../docs/index.html" class="btn btn-secondary">
+                <span>📱</span>
+                <span>Android Uygulamasını İndir</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Özellikler -->
+        <div class="section">
+            <h2>✨ Özellikler</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Tam Otomatik</h3>
+                    <p>Excel dosyanızı yükleyin, butona basın. Gerisini sihirbaz halleder.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Akıllı Düzey Hesaplama</h3>
+                    <p>Puanlara göre otomatik olarak en uygun gelişim düzeyini belirler.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏫</div>
+                    <h3>Çoklu Şube Desteği</h3>
+                    <p>Birden fazla şubeyi sırayla otomatik olarak işler.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Çoklu Tema</h3>
+                    <p>Birden fazla temayı tek seferde işleyebilirsiniz.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⏸️</div>
+                    <h3>Duraklat/Devam</h3>
+                    <p>İşlemi istediğiniz zaman duraklatıp devam ettirebilirsiniz.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3>İlerleme Takibi</h3>
+                    <p>Detaylı log ve ilerleme çubuğu ile her adımı takip edin.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Karşılaştırma -->
+        <div class="section">
+            <h2>📊 Web vs Android Karşılaştırma</h2>
+            <div class="comparison">
+                <div class="comparison-grid">
+                    <div class="comparison-column">
+                        <h3>
+                            <span>🌐</span>
+                            <span>Web Versiyonu</span>
+                        </h3>
+                        <ul>
+                            <li><span class="check">✓</span> Excel işleme</li>
+                            <li><span class="check">✓</span> Düzey hesaplama</li>
+                            <li><span class="check">✓</span> İlerleme takibi</li>
+                            <li><span class="check">✓</span> Kurulum gerektirmez</li>
+                            <li><span class="cross">✗</span> e-Okul entegrasyonu</li>
+                            <li><span class="cross">✗</span> Otomatik form doldurma</li>
+                            <li><span class="cross">✗</span> Tam otomasyon</li>
+                        </ul>
+                    </div>
+                    <div class="comparison-column">
+                        <h3>
+                            <span>📱</span>
+                            <span>Android Uygulaması</span>
+                        </h3>
+                        <ul>
+                            <li><span class="check">✓</span> Excel işleme</li>
+                            <li><span class="check">✓</span> Düzey hesaplama</li>
+                            <li><span class="check">✓</span> İlerleme takibi</li>
+                            <li><span class="check">✓</span> Kolay kurulum (APK)</li>
+                            <li><span class="check">✓</span> e-Okul entegrasyonu</li>
+                            <li><span class="check">✓</span> Otomatik form doldurma</li>
+                            <li><span class="check">✓</span> Tam otomasyon</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-content">
+                    <h3>Önemli Not</h3>
+                    <p>
+                        Web versiyonu <strong>simülasyon modunda</strong> çalışır ve e-Okul'a doğrudan veri gönderemez. 
+                        Gerçek kullanım için <strong>Android uygulamasını</strong> kullanmanız gerekmektedir.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nasıl Kullanılır -->
+        <div class="section">
+            <h2>🚀 Nasıl Kullanılır?</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Excel Hazırlayın</h3>
+                        <p>
+                            C sütununa öğrenci numaralarını, E sütunu ve sonrasına tema puanlarını girin. 
+                            <a href="sample-data.html" style="color: #10b981;">Örnek dosya indir</a>
+                        </p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Dosyayı Yükleyin</h3>
+                        <p>Web uygulamasında "Excel Dosyası" butonuna tıklayarak hazırladığınız dosyayı seçin.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Tema Seçin</h3>
+                        <p>İşlemek istediğiniz tema numarasını girin (örn: "1" veya "1-3").</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Başlatın</h3>
+                        <p>"BAŞLAT" butonuna tıklayın ve işlemin tamamlanmasını izleyin.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video -->
+        <div class="section">
+            <h2>📺 Tanıtım Videosu</h2>
+            <div class="video-container">
+                <iframe 
+                    src="https://www.youtube.com/embed/xi7zfdxHFIE" 
+                    title="e-Okul Sihirbazı Tanıtım" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="section" style="text-align: center;">
+            <h2>Hemen Başlayın</h2>
+            <p style="color: #94a3b8; margin-bottom: 30px; font-size: 18px;">
+                Web versiyonunu deneyin veya tam özellikli Android uygulamasını indirin
+            </p>
+            <div class="cta-buttons">
+                <a href="index.html" class="btn btn-primary">
+                    <span>🚀</span>
+                    <span>Web Uygulamasını Dene</span>
+                </a>
+                <a href="../docs/index.html" class="btn btn-secondary">
+                    <span>📱</span>
+                    <span>Android Uygulaması (₺100)</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>⚡ e-Okul Gelişim Düzeyi Sihirbazı v3.4</p>
+        <p style="margin-top: 10px;">
+            <a href="https://wa.me/905063705528">WhatsApp Destek</a> | 
+            <a href="../docs/index.html">Android Uygulama</a> | 
+            <a href="README.md">Dokümantasyon</a>
+        </p>
+    </div>
+</body>
+</html>
