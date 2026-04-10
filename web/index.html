@@ -9,8 +9,9 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #0f172a;
             color: #f1f5f9;
-            padding: 40px 20px;
+            padding: 20px;
             line-height: 1.6;
+            margin: 0;
         }
         .container {
             max-width: 800px;
@@ -80,10 +81,15 @@
             margin: 20px 0;
             transition: all 0.3s ease;
             cursor: move;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         .bookmarklet:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        }
+        .bookmarklet:active {
+            transform: scale(0.98);
         }
         .code-box {
             background: #0f172a;
@@ -95,6 +101,9 @@
             font-size: 13px;
             color: #10b981;
             overflow-x: auto;
+            word-break: break-all;
+            cursor: pointer;
+            touch-action: manipulation;
         }
         .warning {
             background: rgba(251, 191, 36, 0.1);
@@ -110,6 +119,57 @@
         }
         .info-box strong {
             color: #10b981;
+        }
+        
+        /* Mobil optimizasyonlar */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            .container {
+                padding: 24px 20px;
+                border-radius: 16px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            p {
+                font-size: 15px;
+            }
+            .alert, .steps {
+                padding: 16px;
+                margin: 20px 0;
+            }
+            .alert h3 {
+                font-size: 16px;
+            }
+            .step h4 {
+                font-size: 15px;
+            }
+            .bookmarklet {
+                padding: 14px 24px;
+                font-size: 16px;
+                width: 100%;
+                text-align: center;
+                box-sizing: border-box;
+            }
+            .code-box {
+                font-size: 11px;
+                padding: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px 16px;
+            }
+            h1 {
+                font-size: 22px;
+            }
+            .bookmarklet {
+                font-size: 15px;
+                padding: 12px 20px;
+            }
         }
     </style>
 </head>
