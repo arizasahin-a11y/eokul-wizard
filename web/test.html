@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - e-Okul Sihirbazı</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+        }
+        h1 {
+            color: #10b981;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            margin: 10px;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        }
+        .info {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .success {
+            color: #10b981;
+        }
+        .error {
+            color: #ef4444;
+        }
+        #log {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: left;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ e-Okul Sihirbazı Test</h1>
+        <p>Bu sayfa bookmarklet'in çalışıp çalışmadığını test etmek içindir.</p>
+
+        <div class="info">
+            <h3>Test Adımları:</h3>
+            <ol style="margin-left: 20px;">
+                <li>Aşağıdaki "Test Et" butonuna tıklayın</li>
+                <li>Sağ altta ⚡ ikon görünmeli</li>
+                <li>İkona tıklayınca panel açılmalı</li>
+            </ol>
+        </div>
+
+        <button class="btn" onclick="testBookmarklet()">🧪 Test Et</button>
+        <button class="btn" onclick="clearLog()" style="background: #475569;">🗑 Temizle</button>
+
+        <div id="log"></div>
+    </div>
+
+    <script>
+        function log(msg, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString('tr-TR');
+            const color = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#94a3b8';
+            logDiv.innerHTML += `<div style="color: ${color}; margin-bottom: 8px;">[${time}] ${msg}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function testBookmarklet() {
+            log('Test başlatılıyor...', 'info');
+            
+            // SheetJS yükle
+            log('SheetJS yükleniyor...', 'info');
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+            
+            s.onload = function() {
+                log('✅ SheetJS yüklendi', 'success');
+                
+                // Wizard script yükle
+                log('Wizard script yükleniyor...', 'info');
+                const w = document.createElement('script');
+                w.src = 'https://arizasahin-a11y.github.io/eokul-wizard/web/wizard-inject.js';
+                
+                w.onload = function() {
+                    log('✅ Wizard script yüklendi', 'success');
+                    log('✅ Test başarılı! Sağ altta ⚡ ikon görünmeli.', 'success');
+                };
+                
+                w.onerror = function() {
+                    log('❌ Wizard script yüklenemedi!', 'error');
+                    log('GitHub Pages aktif değil olabilir.', 'error');
+                };
+                
+                document.head.appendChild(w);
+            };
+            
+            s.onerror = function() {
+                log('❌ SheetJS yüklenemedi!', 'error');
+            };
+            
+            document.head.appendChild(s);
+        }
+
+        // Sayfa yüklendiğinde bilgi ver
+        window.onload = function() {
+            log('Test sayfası hazır', 'info');
+            log('GitHub Pages URL: https://arizasahin-a11y.github.io/eokul-wizard/', 'info');
+        };
+    </script>
+</body>
+</html>

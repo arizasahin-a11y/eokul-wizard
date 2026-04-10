@@ -5,9 +5,12 @@
 (function () {
     'use strict';
 
-    // e-Okul sayfasında mıyız kontrol et
-    if (!window.location.hostname.includes('e-okul.meb.gov.tr')) {
-        alert('⚠️ Bu araç sadece e-okul.meb.gov.tr sayfasında çalışır!');
+    // e-Okul sayfasında mıyız kontrol et (test için devre dışı)
+    const isEokul = window.location.hostname.includes('e-okul.meb.gov.tr');
+    const isTest = window.location.hostname.includes('github.io') || window.location.hostname.includes('localhost');
+    
+    if (!isEokul && !isTest) {
+        alert('⚠️ Bu araç sadece e-okul.meb.gov.tr sayfasında çalışır!\n\nTest için: https://arizasahin-a11y.github.io/eokul-wizard/web/test.html');
         return;
     }
 
