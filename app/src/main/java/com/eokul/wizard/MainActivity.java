@@ -7,7 +7,9 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
+import android.webkit.JavascriptInterface;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -15,8 +17,6 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.webkit.JavascriptInterface;
-import android.provider.Settings;
 import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
@@ -56,13 +56,11 @@ public class MainActivity extends Activity {
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
-        // Desktop UA — e-okul mobil yönlendirmesi olmasın
         s.setUserAgentString(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
             "AppleWebKit/537.36 (KHTML, like Gecko) " +
             "Chrome/120.0.0.0 Safari/537.36"
         );
-        // Debug modunda Chrome DevTools ile incelenebilir
         WebView.setWebContentsDebuggingEnabled(true);
 
         webView.setWebViewClient(new EokulWebViewClient());
@@ -81,7 +79,6 @@ public class MainActivity extends Activity {
                 startActivity(i);
             } catch (Exception e) {
                 Toast.makeText(MainActivity.this, "WhatsApp yüklü değil!", Toast.LENGTH_SHORT).show();
-                // Alternatif: Browser üzerinden aç
                 String url = "https://wa.me/" + number + "?text=" + Uri.encode(message);
                 Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 startActivity(i);
@@ -89,14 +86,10 @@ public class MainActivity extends Activity {
         }
     }
 
-    // e-okul sayfası mı?
     private boolean isEokulPage(String url) {
         return url != null && url.contains("e-okul.meb.gov.tr");
     }
 
-    // ─── WebViewClient ───────────────────────────────────────────────────────
-
-    // Sayfa yüklenmeye başlar başlamaz ⚡ FAB'ı göster
     private static final String EARLY_FAB =
         "(function(){" +
         "  if(document.getElementById('ew-fab')) return;" +
@@ -146,16 +139,12 @@ public class MainActivity extends Activity {
         }
     }
 
-
-    // ─── WebChromeClient ─────────────────────────────────────────────────────
-
     private class EokulWebChromeClient extends WebChromeClient {
 
         @Override
         public boolean onShowFileChooser(WebView webView,
                                          ValueCallback<Uri[]> callback,
                                          FileChooserParams params) {
-            // Önceki bekleyen callback varsa iptal et
             if (filePathCallback != null) {
                 filePathCallback.onReceiveValue(null);
             }
@@ -198,8 +187,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    // ─── Script Enjeksiyonu ──────────────────────────────────────────────────
-
     private void injectScripts(final WebView view) {
         final String xlsxJs  = loadAsset("xlsx.full.min.js");
         final String wizardJs = loadAsset("wizard.js");
@@ -209,10 +196,8 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // Önce SheetJS'i enjekte et; callback'te wizard'ı enjekte et
         view.post(() ->
             view.evaluateJavascript(
-                // Zaten tanımlıysa tekrar ekleme
                 "(typeof XLSX !== 'undefined') ? 'skip' : (function(){" + xlsxJs + "})();",
                 result -> {
                     Log.d(TAG, "SheetJS: " + result);
@@ -237,7 +222,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    // ─── Geri tuşu ───────────────────────────────────────────────────────────
+
 
     @Override
     public void onBackPressed() {

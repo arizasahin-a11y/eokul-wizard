@@ -9,6 +9,9 @@ Excel'den e-Okul'a otomatik Gelişim Düzeyi girişi yapan uygulama. Saatler sü
 - ✅ Tam otomatik form doldurma
 - ✅ WebView içinde çalışır
 - ✅ Çoklu şube desteği
+- ✅ **Şimşek Panelinde 2 Sekme:**
+  - **📊 EXCEL'DEN AL:** Excel dosyasından otomatik veri girişi
+  - **🌐 E-OKUL'DAN AL:** e-Okul'daki notlardan düzey atama (YENİ!)
 - 💰 **Fiyat:** ₺100 (Nisan Kampanyası)
 
 [📥 Android Uygulamasını İndir](docs/index.html)
@@ -47,9 +50,20 @@ Excel'den e-Okul'a otomatik Gelişim Düzeyi girişi yapan uygulama. Saatler sü
 ### Android Uygulaması
 
 1. APK'yı indir ve yükle
-2. e-Okul'a giriş yap
-3. Sağ alttaki ⚡ ikona tıkla
-4. Excel yükle ve BAŞLAT'a bas
+2. Uygulamayı aç (e-Okul WebView açılır)
+3. e-Okul'a giriş yap
+4. Sağ alttaki ⚡ ikona tıkla
+5. Panel açılır, **2 sekme** görürsün:
+   
+   **📊 EXCEL'DEN AL:**
+   - Excel dosyasından otomatik veri girişi
+   - Excel yükle, tema seç, BAŞLAT'a bas
+   
+   **🌐 E-OKUL'DAN AL:**
+   - e-Okul'daki mevcut notlardan düzey ata
+   - Sayfa Yükle → Ders seç → Listele
+   - Kriter sütunu seç (hangi nottan düzey atansın)
+   - İşleme Başla → Otomatik düzey atar
 
 ### Web Versiyonu
 
