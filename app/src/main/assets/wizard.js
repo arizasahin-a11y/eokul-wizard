@@ -477,7 +477,7 @@
         save();
         if (S.open) {
             console.log('EW: Panel opened, syncing tab:', S.activeTab);
-            switchTab(S.activeTab, true); 
+            switchTab(S.activeTab, false); 
         }
     };
     fab.onclick = (e) => { e.stopPropagation(); togglePanel(); };
@@ -618,8 +618,8 @@
         }
     }
     
-    document.getElementById('ew-tab-excel').onclick = () => switchTab('excel', true);
-    document.getElementById('ew-tab-eokul').onclick = () => switchTab('eokul', true);
+    document.getElementById('ew-tab-excel').onclick = () => switchTab('excel', false);
+    document.getElementById('ew-tab-eokul').onclick = () => switchTab('eokul', false);
     
     if (IS_EOKUL_LIST) switchTab('eokul');
     else if (S.activeTab) switchTab(S.activeTab);
