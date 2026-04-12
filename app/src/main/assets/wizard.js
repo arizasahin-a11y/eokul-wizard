@@ -227,17 +227,21 @@
     if (!document.getElementById('ew-css')) {
         const st=document.createElement('style'); st.id='ew-css';
         st.textContent=`
-          @keyframes ewPulse{0%,100%{transform:scale(1);box-shadow:0 0 20px rgba(16,185,129,.4)}50%{transform:scale(1.08);box-shadow:0 0 35px rgba(16,185,129,.7)}}
-          #ew-fab{animation:ewPulse 2s ease-in-out infinite;background:linear-gradient(135deg,#10b981,#3b82f6)!important;
-                  border:2px solid rgba(255,255,255,.3);backdrop-filter:blur(10px)}
-          #ew-fab:hover{animation:none;transform:scale(1.15)!important;box-shadow:0 0 40px rgba(16,185,129,.8);transition:.2s}
-          #ew-panel{transition:opacity .25s,transform .25s;transform-origin:bottom right}
+          @keyframes ewRedLight{0%,100%{transform:scale(1);box-shadow:0 0 15px rgba(239,68,68,0.5)}50%{transform:scale(1.1);box-shadow:0 0 35px rgba(239,68,68,0.8), 0 0 60px rgba(239,68,68,0.4)}}
+          #ew-fab{animation:ewRedLight 2s ease-in-out infinite;background:linear-gradient(135deg,#ef4444,#991b1b)!important;
+                  border:2px solid rgba(255,255,255,.4);backdrop-filter:blur(10px);box-shadow: 0 0 20px rgba(239,68,68,0.4)}
+          #ew-fab:hover{animation:none;transform:scale(1.15)!important;box-shadow:0 0 40px rgba(239,68,68,0.9);transition:.2s}
+          #ew-panel{transition:opacity .25s,transform .25s;transform-origin:bottom right;z-index:2147483647!important}
           #ew-panel.ew-hidden{opacity:0;transform:scale(.88);pointer-events:none}
           .ew-sel{width:100%;background:#334155;border:1px solid #475569;color:#f1f5f9;
             padding:10px 9px;border-radius:8px;font-size:14px;margin-bottom:8px;color-scheme:dark}
           .ew-sel option{color:#000;background:#fff}
           .ew-btn{border:none;border-radius:10px;color:white;font-size:15px;
-            font-weight:700;cursor:pointer;padding:15px}
+            font-weight:700;cursor:pointer;padding:15px;transition: transform 0.1s, filter 0.1s; 
+            position:relative; overflow:hidden; pointer-events: auto !important}
+          .ew-btn:active{transform:scale(0.95);filter:brightness(1.2)}
+          .ew-btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.2);opacity:0;transition:opacity 0.2s}
+          .ew-btn:active::after{opacity:1}
           .ew-inp{width:100%;background:#334155;border:1px solid #475569;color:#f1f5f9;
             padding:10px;border-radius:8px;font-size:14px;box-sizing:border-box;color-scheme:dark}
           .ew-inp:focus, .ew-sel:focus{background:#3b82f6!important;color:#fff!important;outline:none;border-color:#60a5fa}
@@ -389,10 +393,10 @@
     </div>
     
     <label class="ew-lbl" style="margin-top:0">Sınıf:</label>
-    <select id="ew-eokul-sinif" class="ew-sel"><option value="">Yükleniyor...</option></select>
+    <select id="ew-eokul-sinif" class="ew-sel"><option value=""></option></select>
     
     <label class="ew-lbl">Ders:</label>
-    <select id="ew-eokul-ders" class="ew-sel" disabled><option value="">Önce sınıf seçin...</option></select>
+    <select id="ew-eokul-ders" class="ew-sel" disabled><option value=""></option></select>
     
     <button id="ew-eokul-listele" class="ew-btn" disabled style="width:100%;background:#374151;margin-bottom:12px">
       📋 Listele
@@ -403,6 +407,10 @@
     
     <label class="ew-lbl">Tema No (örn: 1 veya 2-4):</label>
     <input type="text" id="ew-eokul-range" class="ew-inp" value="${S.eokulRange||'1'}" style="margin-bottom:10px">
+    
+    <label style="font-size:14px;color:#94a3b8;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:14px">
+      <input type="checkbox" id="ew-eokul-auto" ${S.autoNextClass?'checked':''} style="width:19px;height:19px"> Şubeyi Otomatik Atla
+    </label>
     
     <div style="display:flex;gap:8px;margin-bottom:8px">
       <button id="ew-eokul-basla" class="ew-btn" disabled style="flex:2;background:#374151">▶ BAŞLAT</button>
@@ -426,6 +434,12 @@
         style="font-size:13px;width:100%;background:#0f172a;border:1px solid #475569;
                color:#f1f5f9;padding:10px;border-radius:8px;box-sizing:border-box">
     </div>
+
+    <label class="ew-lbl">Sınıf:</label>
+    <select id="ew-sube" class="ew-sel"><option value="">Sayfa yükleniyor...</option></select>
+    
+    <label class="ew-lbl">Ders:</label>
+    <select id="ew-ders" class="ew-sel"><option value="">Sayfa yükleniyor...</option></select>
 
     <label class="ew-lbl">Tema No (örn: 1 veya 2-4):</label>
     <input type="text" id="ew-cat" class="ew-inp" value="${S.catRange}" style="margin-bottom:10px">
@@ -452,44 +466,99 @@
 
     Object.assign(panel.style, {
         position:'fixed', bottom:'80px', right:'12px',
-        zIndex:'9999998', maxHeight:'92vh', overflowY:'auto'
+        zIndex:'2147483647', maxHeight:'92vh', overflowY:'auto', pointerEvents: 'auto'
     });
     if (!S.open) panel.classList.add('ew-hidden');
     document.body.appendChild(panel);
 
-    function togglePanel() {
+    const togglePanel = () => {
         S.open = !S.open;
         panel.classList.toggle('ew-hidden', !S.open);
         save();
-    }
-    fab.onclick = togglePanel;
-    document.getElementById('ew-close').onclick = togglePanel;
+        if (S.open) {
+            console.log('EW: Panel opened, syncing tab:', S.activeTab);
+            switchTab(S.activeTab, true); 
+        }
+    };
+    fab.onclick = (e) => { e.stopPropagation(); togglePanel(); };
 
-    
-    // Veriyi Sıfırla Linki
-    const resetLink = document.getElementById('ew-reset');
-    if (resetLink) {
-        resetLink.onclick = (e) => {
-            e.preventDefault();
+    // ULTIMATE CAPTURE-PHASE LISTENER (Tüm engelleri aşar)
+    window.addEventListener('click', (e) => {
+        const btn = e.target.closest('.ew-btn, #ew-close, #ew-help-btn, #ew-reset, #ew-lic-show');
+        if (!btn || !panel.contains(btn)) return; // Sadece bizim panel içindeki butonlar
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const idStr = btn.id;
+        const isVisualDisabled = btn.dataset.disabled === 'true';
+        const isAlwaysActive = idStr.includes('stop') || idStr === 'ew-close' || idStr === 'ew-reset';
+
+        if (isVisualDisabled && !isAlwaysActive) {
+            console.log('EW: Click ignored (visually disabled)', idStr);
+            return;
+        }
+
+        console.log('EW: Click captured', idStr);
+        if (idStr === 'ew-close') { togglePanel(); }
+        else if (idStr === 'ew-help-btn') {
+            const h = document.getElementById('ew-help');
+            if (h) h.style.display = h.style.display === 'none' ? 'block' : 'none';
+        }
+        else if (idStr === 'ew-reset') {
+            if (!confirm('Tüm verileri sıfırlamak istiyor musunuz?')) return;
             S = {
                 active: false, mode: 'fill', excelData: [],
                 currentIndex: -1, catRange: '1', autoNextClass: true,
                 autoConfirm: true, waiting: false, paused: false, open: true,
-                activeTab: S.activeTab,
-                eokulListPending: false, eokulSelectedSinif: '', eokulSelectedDers: '',
+                activeTab: S.activeTab, eokulListPending: false, 
+                eokulSelectedSinif: '', eokulSelectedDers: '',
                 eokulRange: '1', selectedSube: '', selectedDers: '', autoStartList: false
             };
-            save();
-            location.reload();
-        };
-    }
+            save(); location.reload();
+        }
+        else if (idStr === 'ew-lic-show') { showLicModal(); }
+        else if (idStr === 'ew-start' || idStr === 'ew-eokul-basla') {
+            if (!isActivated()) { showLicModal(); return; }
+            if (idStr === 'ew-eokul-basla' && IS_EOKUL_LIST) { runEokulExtraction(); return; }
+            if (S.excelData.length === 0 && !idStr.includes('eokul') && idStr !== 'ew-eokul-basla') { msg('⚠️ Önce veri yükleyin!'); return; }
+            
+            if (S.active && S.mode === 'fill') { S.paused = !S.paused; }
+            else { 
+                S.active = true; S.mode = 'fill'; S.paused = false; S.currentIndex = -1;
+                if (S.activeTab === 'eokul' && S.eokulRange) S.catRange = S.eokulRange;
+            }
+            save(); updateStartBtn();
+            if (S.active && !S.paused) runLoop();
+        }
+        else if (idStr === 'ew-stop' || idStr === 'ew-eokul-stop') { 
+            handleStop(); 
+        }
+        else if (idStr === 'ew-clear' || idStr === 'ew-eokul-clear') { 
+            handleClear(); 
+        }
+        else if (idStr === 'ew-eokul-listele') {
+            console.log('EW: Listele trigger');
+            localStorage.setItem(PENDING_KEY, JSON.stringify({ pending: true, time: Date.now() }));
+            const pageListele = document.getElementById('btnListele') || 
+                               document.getElementById('btnSorgula') || 
+                               document.querySelector('input[id*="btnListele"]') ||
+                               document.querySelector('input[id*="Sorgu"]');
+            if (pageListele) pageListele.click();
+            else msg('⚠️ Sayfadaki Listele butonu bulunamadı!');
+        }
+    }, true); // TRUE = CAPTURE PHASE
 
-    document.getElementById('ew-help-btn').onclick = () => {
-        const h = document.getElementById('ew-help');
-        if (h) h.style.display = h.style.display === 'none' ? 'block' : 'none';
-    };
-    const lsBtn = document.getElementById('ew-lic-show');
-    if (lsBtn) lsBtn.onclick = (e) => { e.preventDefault(); showLicModal(); };
+    // Görsel Buton Durumu Yardımcısı
+    function setBtnState(el, disabled, color) {
+        if (!el) return;
+        el.dataset.disabled = disabled ? 'true' : 'false';
+        el.style.opacity = disabled ? '0.4' : '1';
+        el.style.filter = disabled ? 'grayscale(0.8)' : 'none';
+        el.style.background = color;
+        el.style.cursor = disabled ? 'not-allowed' : 'pointer';
+        el.style.pointerEvents = 'auto'; // Her zaman tıklanabilir (Capture yakalasın diye)
+    }
 
     // GÜVENLİK KİLİDİ VE BUTON DURUM YÖNETİMİ
     function updateControlStates() {
@@ -500,31 +569,17 @@
         // Excel Butonları
         const exStart = document.getElementById('ew-start');
         const exClear = document.getElementById('ew-clear');
-        if (exStart) {
-            exStart.disabled = !hasExcel;
-            exStart.style.background = hasExcel ? '#10b981' : '#374151';
-        }
-        if (exClear) {
-            exClear.disabled = !hasExcel;
-            exClear.style.background = hasExcel ? '#ef4444' : '#374151';
-        }
+        setBtnState(exStart, !hasExcel, hasExcel ? '#10b981' : '#374151');
+        setBtnState(exClear, !hasExcel, hasExcel ? '#ef4444' : '#374151');
 
         // E-Okul Butonları (Kriter seçilmeden aktif olmaz)
         const eoStart = document.getElementById('ew-eokul-basla');
         const eoStop = document.getElementById('ew-eokul-stop');
         const eoClear = document.getElementById('ew-eokul-clear');
-        if (eoStart) {
-            eoStart.disabled = !hasEokulCol;
-            eoStart.style.background = hasEokulCol ? '#10b981' : '#374151';
-        }
-        if (eoStop) {
-            eoStop.disabled = !hasEokulCol;
-            eoStop.style.background = hasEokulCol ? '#475569' : '#374151';
-        }
-        if (eoClear) {
-            eoClear.disabled = !hasEokulCol;
-            eoClear.style.background = hasEokulCol ? '#ef4444' : '#374151';
-        }
+        
+        setBtnState(eoStart, !hasEokulCol, hasEokulCol ? '#10b981' : '#374151');
+        setBtnState(eoStop, !hasEokulCol, hasEokulCol ? '#475569' : '#374151');
+        setBtnState(eoClear, !hasEokulCol, hasEokulCol ? '#ef4444' : '#374151');
     }
 
     // Sekme değiştirme
@@ -575,7 +630,7 @@
     setTimeout(() => {
         updateControlStates();
         const colSel = document.getElementById('ew-eokul-sutun');
-        if (colSel) colSel.onchange = updateControlStates;
+        if (colSel) colSel.onchange = () => { updateControlStates(); updateStartBtn(); };
 
         const listeleBtn = document.getElementById('ew-eokul-listele');
         if (listeleBtn) {
@@ -730,6 +785,7 @@
             sutunSel.onchange = () => {
                 const btn = document.getElementById('ew-eokul-basla');
                 if (btn && sutunSel.value) { btn.disabled = false; btn.style.background = '#10b981'; }
+                updateStartBtn(); // Temizle ve diğer butonları da güncelle
             };
         }
         
@@ -806,27 +862,21 @@
                     panelSinif.add(new Option(opt.text, opt.value));
                 });
                 
-                // Kaydedilmiş sınıf seçimi varsa geri yükle
-                if (S.eokulSelectedSinif) {
+                // Sadece Listele dedikten sonra (sayfa yenilendiğinde) geri yükle
+                if (shouldAnalyzeTable && S.eokulSelectedSinif) {
                     panelSinif.value = S.eokulSelectedSinif;
                     pageSinif.value = S.eokulSelectedSinif;
                     
-                    // SADECE sayfa yenilendiyse (Listele'den gelindiyse) change event tetikle
-                    // Ama sadece bir kez tetikle, sonsuz döngüye girmesin
-                    if (shouldAnalyzeTable) {
-                        pageSinif.dispatchEvent(new Event('change', {bubbles: true}));
-                        if (window.$ && window.$.fn && window.$.fn.select2) {
-                            $(pageSinif).trigger('change.select2');
-                        }
+                    pageSinif.dispatchEvent(new Event('change', {bubbles: true}));
+                    if (window.$ && window.$.fn && window.$.fn.select2) {
+                        $(pageSinif).trigger('change.select2');
                     }
                 } else {
-                    // Sınıf seçimi yoksa ilk seçeneği seç (genellikle boş değil)
-                    if (panelSinif.options.length > 1) {
-                        panelSinif.selectedIndex = 1; // İlk gerçek seçenek
-                        pageSinif.selectedIndex = 1;
-                        S.eokulSelectedSinif = panelSinif.value;
-                        save();
-                    }
+                    // Sınıf seçimi yoksa veya yeni açıldıysa boş bırak
+                    S.eokulSelectedSinif = '';
+                    save();
+                    panelSinif.selectedIndex = 0;
+                    pageSinif.selectedIndex = 0;
                 }
                 
                 // Sınıf değiştiğinde
@@ -884,16 +934,16 @@
                 panelDers.add(new Option(opt.text, opt.value));
             });
             
-            // Kaydedilmiş ders seçimi varsa geri yükle
-            if (S.eokulSelectedDers) {
+            // Sadece listeleme sonrası yenileme durumunda dersi geri yükle
+            if (isReload && S.eokulSelectedDers) {
                 panelDers.value = S.eokulSelectedDers;
                 pageDers.value = S.eokulSelectedDers;
             } else {
-                // Ders seçimi yoksa ilk gerçek seçeneği seç
-                panelDers.selectedIndex = 1;
-                pageDers.selectedIndex = 1;
-                S.eokulSelectedDers = panelDers.value;
+                // Ders seçimi yoksa veya kullanıcı yeni sınıf seçtiyse boş bırak
+                S.eokulSelectedDers = '';
                 save();
+                panelDers.selectedIndex = 0;
+                pageDers.selectedIndex = 0;
             }
             
             panelDers.disabled = false;
@@ -981,7 +1031,11 @@
     /* ── Otomasyon Motoru ve Kontroller ──────────────────────── */
     
     const updateStartBtn = () => {
-        const hd = S.excelData.length > 0;
+        const hasExcel = S.excelData && S.excelData.length > 0;
+        const eokulSutun = document.getElementById('ew-eokul-sutun');
+        const hasEokulCol = eokulSutun && eokulSutun.value && eokulSutun.value !== "" && eokulSutun.options[eokulSutun.selectedIndex]?.text !== "Önce listeleyin...";
+        
+        const hd = hasExcel || (S.activeTab === 'eokul' && hasEokulCol);
         const buttons = [
             { start: 'ew-start', stop: 'ew-stop', clear: 'ew-clear' },
             { start: 'ew-eokul-basla', stop: 'ew-eokul-stop', clear: 'ew-eokul-clear' }
@@ -992,33 +1046,43 @@
             const t = document.getElementById(b.stop);
             const c = document.getElementById(b.clear);
             
+            const setBtnState = (el, disabled, color) => {
+                if (!el) return;
+                el.disabled = false; // ASLA GERÇEK DİSABLE YAPMA (Tıklama gitmesi için)
+                el.dataset.disabled = disabled ? 'true' : 'false';
+                el.style.opacity = disabled ? '0.4' : '1';
+                el.style.filter = disabled ? 'grayscale(0.8)' : 'none';
+                el.style.background = color;
+                el.style.cursor = disabled ? 'not-allowed' : 'pointer';
+            };
+
             if (s) {
-                if (S.active) {
+                if (S.active && S.mode === 'fill') {
                     s.textContent = S.paused ? '▶ DEVAM ET' : '⏸ DURAKLAT';
-                    s.style.background = S.paused ? '#f59e0b' : '#3b82f6';
-                    s.disabled = false;
+                    setBtnState(s, false, S.paused ? '#f59e0b' : '#3b82f6');
                 } else {
                     s.textContent = '▶ BAŞLAT';
-                    s.style.background = hd ? '#10b981' : '#374151';
-                    s.disabled = !hd && !(IS_EOKUL_LIST && b.start === 'ew-eokul-basla');
+                    const dis = S.active && S.mode !== 'fill';
+                    const activeColor = hd ? '#10b981' : '#374151';
+                    setBtnState(s, dis || (!hd && !(IS_EOKUL_LIST && b.start === 'ew-eokul-basla')), activeColor);
                 }
             }
-            if (t) t.disabled = !S.active;
+            if (t) setBtnState(t, !S.active, S.active ? '#475569' : '#374151');
             if (c) {
                 if (S.active && S.mode === 'clear') {
-                    c.textContent = S.paused ? '▶ TEMİZLE' : '⏸ DURAKLAT';
-                    c.style.background = '#f59e0b';
+                    c.textContent = S.paused ? '▶ DEVAM ET' : '⏸ DURAKLAT';
+                    setBtnState(c, false, S.paused ? '#f59e0b' : '#3b82f6');
                 } else {
                     c.textContent = '🗑 TEMİZLE';
-                    c.style.background = hd ? '#ef4444' : '#374151';
+                    const dis = !hd || (S.active && S.mode !== 'clear');
+                    setBtnState(c, dis, hd ? '#ef4444' : '#374151');
                 }
-                c.disabled = !hd || (S.active && S.mode !== 'clear');
             }
         });
     };
 
     const handleStop = () => {
-        S.active = false; S.paused = false; S.currentIndex = -1;
+        S.active = false; S.paused = false; S.currentIndex = -1; loopBusy = false;
         save(); updateStartBtn();
         msg('⏹ Otomasyon durduruldu.');
     };
@@ -1026,12 +1090,41 @@
     const handleClear = () => {
         if (S.active && S.mode === 'clear') {
             S.paused = !S.paused;
-        } else {
-            S.active = true;
+            save(); updateStartBtn();
+            if (S.active && !S.paused) runLoop();
+            return;
+        }
+
+        const eokulSutun = document.getElementById('ew-eokul-sutun');
+        const hasEokulCol = eokulSutun && eokulSutun.value && eokulSutun.value !== "";
+        const canClear = S.excelData.length > 0 || (S.activeTab === 'eokul' && hasEokulCol);
+
+        if (!canClear && !S.active) { msg('⚠️ Önce veri yükleyin veya seçim yapın!'); return; }
+
+        // E-OKUL MODUNDA ÖZEL TEMİZLEME AKIŞI: Kaydet ve Yönlendir
+        if (S.activeTab === 'eokul') {
+            if (!S.eokulSelectedSinif || !S.eokulSelectedDers) { msg('⚠️ Sınıf ve ders seçmelisiniz!'); return; }
+            
             S.mode = 'clear';
+            S.active = true;
             S.paused = false;
             S.currentIndex = -1;
+            S.catRange = S.eokulRange || '1';
+            S.selectedSube = S.eokulSelectedSinif;
+            S.selectedDers = S.eokulSelectedDers;
+            S.autoStartList = true;
+            
+            save(); 
+            msg('🧹 Temizleme ayarları kaydedildi. Yönlendiriliyor...');
+            setTimeout(() => { window.location.href = OOK_URL; }, 1000);
+            return;
         }
+
+        // EXCEL MODUNDA NORMAL TEMİZLEME
+        S.active = true;
+        S.mode = 'clear';
+        S.paused = false;
+        S.currentIndex = -1;
         save();
         updateStartBtn();
         if (S.active && !S.paused) {
@@ -1128,32 +1221,28 @@
         const bindInp = (id, key, isCheck = false) => {
             const el = document.getElementById(id);
             if (!el) return;
-            const handler = (e) => {
+            el[isCheck ? 'onchange' : 'oninput'] = (e) => {
                 S[key] = isCheck ? e.target.checked : e.target.value;
                 save();
+                updateStartBtn(); // Her değişiklikte butonları güncelle
             };
-            el[isCheck ? 'onchange' : 'oninput'] = handler;
         };
         bindInp('ew-cat', 'catRange');
         bindInp('ew-eokul-range', 'eokulRange');
         bindInp('ew-auto', 'autoNextClass', true);
+        bindInp('ew-eokul-auto', 'autoNextClass', true);
         bindInp('ew-ac', 'autoConfirm', true);
     }
     setTimeout(initBinders, 500);
-    setTimeout(initBinders, 2500); // Fail-safe (Panel yeniden render olursa)
+    setTimeout(initBinders, 2500); 
 
-    ['ew-stop', 'ew-eokul-stop'].forEach(id => {
-        const btn = document.getElementById(id); if (btn) btn.onclick = handleStop;
-    });
-
-    ['ew-clear', 'ew-eokul-clear'].forEach(id => {
-        const btn = document.getElementById(id); if (btn) btn.onclick = handleClear;
-    });
+    // Click dinleyicileri panel.onclick içerisine taşındı (Event Delegation)
 
     let mainTimer = null;
     let loopBusy = false;
     const runLoop = async () => {
-        if (loopBusy || !S.active || S.paused) return;
+        if (loopBusy || !S.active) return;
+        if (S.paused) { loopBusy = false; setTimeout(runLoop, 500); return; }
         loopBusy = true;
 
         try {
@@ -1187,9 +1276,19 @@
                 }
                 msg(S.mode === 'clear' ? '✅ Sınıf temizlendi!' : '✅ TÜM LİSTE TAMAMLANDI!');
                 if (S.autoConfirm) await pollAutoConfirm(3.0);
+                
+                const isEokul = S.activeTab === 'eokul';
                 S.active = false; S.paused = false; loopBusy = false; save();
-                updateStartBtn(); return;
+                updateStartBtn();
+                
+                if (isEokul) {
+                    msg('✅ Tamamlandı. Not Girişi listesine dönülüyor...');
+                    setTimeout(() => { window.location.href = 'https://e-okul.meb.gov.tr/OrtaOgretim/OKL/OOK07003.aspx'; }, 1500);
+                }
+                return;
             }
+
+            if (!S.active || S.paused) { loopBusy = false; return; }
 
             const tr = rows[S.currentIndex];
             const sNo = tr.cells[2]?.innerText.trim();
@@ -1205,6 +1304,7 @@
             msg(`👤 ${sNo} No | Golden Motor devrede...`);
             btnOp.click();
             await wait(1200);
+            if (!S.active || S.paused) { loopBusy = false; return; }
 
             // Başlıkları ve Temaları Saptama (v3.3)
             let headers = [...document.querySelectorAll('a.text-light')];
@@ -1215,10 +1315,15 @@
             let changed = false;
 
             for (const idx of targetIdxs) {
+                if (!S.active || S.paused) { loopBusy = false; return; }
                 let searchIn = document;
                 if (headers.length > 0 && idx < headers.length) {
                     const h = headers[idx];
-                    if (h.classList.contains('collapsed')) { h.click(); await wait(300); }
+                    if (h.classList.contains('collapsed')) { 
+                        h.click(); 
+                        await wait(300); 
+                        if (!S.active || S.paused) { loopBusy = false; return; }
+                    }
                     searchIn = h.closest('.card') || h.parentElement?.nextElementSibling || document;
                 }
 
@@ -1239,7 +1344,8 @@
                         if (lastUnder !== -1) stems.add(rid.substring(0, lastUnder));
                     });
 
-                    stems.forEach(stem => {
+                    for (const stem of stems) {
+                        if (!S.active || S.paused) { loopBusy = false; return; }
                         const lvl = getRandLvl(baseLvl);
                         const rd = document.getElementById(`${stem}_${lvl}`);
                         if (rd && !rd.checked) { 
@@ -1247,13 +1353,18 @@
                             if (rd.style) { rd.style.outline = '3px solid #10b981'; rd.style.background = '#dcfce7'; }
                             changed = true; 
                         }
-                    });
+                    }
                 } else {
                     // v3.3 TEMİZLEME MANTIĞI
                     const tBtns = [...searchIn.querySelectorAll('button, input, a')].filter(b => (b.textContent||b.value||b.title||'').toLowerCase().includes('temizle'));
-                    for (const b of tBtns) { b.click(); if (S.autoConfirm) autoModalClick(); await wait(20); changed = true; }
+                    for (const b of tBtns) { 
+                        if (!S.active || S.paused) { loopBusy = false; return; }
+                        b.click(); if (S.autoConfirm) autoModalClick(); await wait(20); changed = true; 
+                    }
                 }
             }
+
+            if (!S.active || S.paused) { loopBusy = false; return; }
 
             if (changed) {
                 await wait(500);
