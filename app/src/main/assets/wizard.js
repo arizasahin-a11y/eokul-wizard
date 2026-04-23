@@ -17,7 +17,8 @@
         autoConfirm: true, waiting: false, paused: false, open: true,
         activeTab: 'eokul', // Varsayılan artık E-Okul
         eokulListPending: false, eokulSelectedSinif: '', eokulSelectedDers: '',
-        eokulRange: '1', selectedSube: '', selectedDers: '', autoStartList: false
+        eokulRange: '1', selectedSube: '', selectedDers: '', autoStartList: false,
+        selectedSubeText: '', selectedDersText: ''
     };
     // Oturum başlangıcında verileri koru
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
@@ -126,8 +127,7 @@
 
     /* ── Yardımcılar ─────────────────────────────────────────── */
     const wait = ms => new Promise(r => setTimeout(r, ms));
-    const waitAjax = async (maxSec = 10) => {
-        // e-Okul UpdatePanel (AJAX) meşguliyetini takip eder
+    const waitAjax = async (maxSec = 5) => {
         for (let i = 0; i < maxSec * 10; i++) {
             const isBusy = window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager.getInstance().get_isInAsyncPostBack();
             if (!isBusy) return true;
@@ -145,6 +145,18 @@
         if (inp) return inp.value.trim();
         return c.textContent.trim();
     };
+    // Sayfadaki şube/sınıf ve ders/beceri select elementlerini dinamik olarak bul
+    const findSubeSel = () =>
+        document.getElementById('cmbSubeler') ||
+        document.getElementById('cmbSiniflar') ||
+        document.getElementById('cmbSinif') ||
+        document.querySelector('select[id*="Sube"], select[id*="Sinif"], select[id*="sube"], select[id*="sinif"]');
+    const findDersSel = () =>
+        document.getElementById('cmbBeceriler') ||
+        document.getElementById('cmbDersler') ||
+        document.getElementById('cmbDers') ||
+        document.querySelector('select[id*="Beceri"], select[id*="Ders"], select[id*="beceri"], select[id*="ders"]');
+
     function parseRange(s) {
         const idx = new Set();
         (s || '').split(',').map(p => p.trim()).forEach(p => {
@@ -172,11 +184,10 @@
         if (!loader) {
             loader = document.createElement('div');
             loader.id = 'ew-loader';
-            loader.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#0f172a;display:flex;align-items:center;justify-content:center;z-index:9999999999;color:white;flex-direction:column;font-family:sans-serif;transition:opacity 0.4s';
+            loader.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);width:auto;padding:14px 20px;background:rgba(15,23,42,0.92);display:flex;align-items:center;z-index:9999999999;color:white;font-family:sans-serif;transition:opacity 0.3s;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.4);border:1px solid #334155;pointer-events:none;gap:12px';
             loader.innerHTML = `
-                <div style="width:50px;height:50px;border:5px solid #1e293b;border-top:5px solid #10b981;border-radius:50%;animation:ewSpin 1s linear infinite;margin-bottom:20px"></div>
-                <div id="ew-loader-text" style="font-size:16px;font-weight:700">Lütfen bekleyiniz...</div>
-                <div style="font-size:12px;color:#64748b;margin-top:10px">İşlem otomatik olarak devam ediyor</div>
+                <div style="width:18px;height:18px;border:2px solid #1e293b;border-top:2px solid #10b981;border-radius:50%;animation:ewSpin 1s linear infinite;flex-shrink:0"></div>
+                <div id="ew-loader-text" style="font-size:13px;font-weight:600">Lütfen bekleyiniz...</div>
             `;
             document.body.appendChild(loader);
         }
@@ -513,7 +524,8 @@
                 autoConfirm: true, waiting: false, paused: false, open: true,
                 activeTab: S.activeTab, eokulListPending: false, 
                 eokulSelectedSinif: '', eokulSelectedDers: '',
-                eokulRange: '1', selectedSube: '', selectedDers: '', autoStartList: false
+                eokulRange: '1', selectedSube: '', selectedDers: '', autoStartList: false,
+                selectedSubeText: '', selectedDersText: ''
             };
             save(); location.reload();
         }
@@ -608,18 +620,20 @@
         updateControlStates();
 
         if (triggerNav) {
-            if (tabName === 'eokul') {
+            if (tabName === 'eokul' && !IS_EOKUL_LIST) {
                 msg('🌐 Not Giriş sayfasına yönlendiriliyor...');
-                setTimeout(() => { window.location.href = 'https://e-okul.meb.gov.tr/OrtaOgretim/OKL/OOK07003.aspx'; }, 300);
-            } else if (tabName === 'excel') {
+                showLoader('Yönlendiriliyor...');
+                setTimeout(() => { window.location.href = 'https://e-okul.meb.gov.tr/OrtaOgretim/OKL/OOK07003.aspx'; }, 400);
+            } else if (tabName === 'excel' && !IS_TARGET) {
                 msg('📊 Gelişim sayfasına yönlendiriliyor...');
-                setTimeout(() => { window.location.href = OOK_URL; }, 300);
+                showLoader('Yönlendiriliyor...');
+                setTimeout(() => { window.location.href = OOK_URL; }, 400);
             }
         }
     }
     
-    document.getElementById('ew-tab-excel').onclick = () => switchTab('excel', false);
-    document.getElementById('ew-tab-eokul').onclick = () => switchTab('eokul', false);
+    document.getElementById('ew-tab-excel').onclick = () => switchTab('excel', true);
+    document.getElementById('ew-tab-eokul').onclick = () => switchTab('eokul', true);
     
     if (IS_EOKUL_LIST) switchTab('eokul');
     else if (S.activeTab) switchTab(S.activeTab);
@@ -814,7 +828,18 @@
         const pendingData = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null');
         const shouldAnalyzeTable = pendingData && pendingData.pending;
         
-        if (shouldAnalyzeTable) {
+        // Sayfa yenilendiğinde sınıf seçimini geri yükle
+        if (pendingData && pendingData.sinif) {
+            S.eokulSelectedSinif = pendingData.sinif;
+            if (pendingData.subeText) {
+                S.selectedSubeText = pendingData.subeText;
+            }
+            if (pendingData.dersText) {
+                S.selectedDersText = pendingData.dersText;
+            }
+            save();
+            
+            // PENDING_KEY'i hemen sil - bir kez geri yükledikten sonra tekrar kullanmaya gerek yok
             localStorage.removeItem(PENDING_KEY);
         }
         
@@ -856,32 +881,46 @@
             
             const panelSinif = document.getElementById('ew-eokul-sinif');
             
-            if (pageSinif && panelSinif) {
+            if (pageSinif && panelSinif && pageSinif.options && pageSinif.options.length > 0) {
                 panelSinif.innerHTML = '';
                 [...pageSinif.options].forEach(opt => {
-                    panelSinif.add(new Option(opt.text, opt.value));
+                    if (opt && opt.text && opt.value) {
+                        panelSinif.add(new Option(opt.text, opt.value));
+                    }
                 });
                 
-                // Sadece Listele dedikten sonra (sayfa yenilendiğinde) geri yükle
-                if (shouldAnalyzeTable && S.eokulSelectedSinif) {
-                    panelSinif.value = S.eokulSelectedSinif;
-                    pageSinif.value = S.eokulSelectedSinif;
-                    
-                    pageSinif.dispatchEvent(new Event('change', {bubbles: true}));
-                    if (window.$ && window.$.fn && window.$.fn.select2) {
-                        $(pageSinif).trigger('change.select2');
+                // Sınıf seçimini koru - shouldAnalyzeTable bayrağından bağımsız
+                if (S.eokulSelectedSinif) {
+                    // Seçilen değer dropdown'da var mı kontrol et
+                    const optionExists = [...panelSinif.options].some(opt => opt.value === S.eokulSelectedSinif);
+                    if (optionExists) {
+                        panelSinif.value = S.eokulSelectedSinif;
+                        pageSinif.value = S.eokulSelectedSinif;
+                        
+                        // SADECE manuel seçim değilse change event'ini tetikleme
+                        // Sayfa yüklendiğinde otomatik geri yükleme sırasında tetiklememeliyiz
+                        // Çünkü bu, e-okul sisteminin kendi kodunu çalıştırıyor ve döngüye neden oluyor
+                        // pageSinif.dispatchEvent(new Event('change', {bubbles: true}));
+                        // if (window.$ && window.$.fn && window.$.fn.select2) {
+                        //     $(pageSinif).trigger('change.select2');
+                        // }
+                    } else {
+                        // Seçilen değer dropdown'da yoksa, ilk sınıfa dön
+                        panelSinif.selectedIndex = 0;
+                        pageSinif.selectedIndex = 0;
                     }
                 } else {
-                    // Sınıf seçimi yoksa veya yeni açıldıysa boş bırak
-                    S.eokulSelectedSinif = '';
-                    save();
-                    panelSinif.selectedIndex = 0;
-                    pageSinif.selectedIndex = 0;
+                    // Sadece gerçekten gerekli olduğunda sıfırla: Sınıf seçimi yoksa ve kullanıcı seçim yapmamışsa
+                    // (sayfa yenilendiğinde veya yeni açıldığında ilk sınıfı seç)
+                    if (!S.eokulSelectedSinif || S.eokulSelectedSinif === '') {
+                        panelSinif.selectedIndex = 0;
+                        pageSinif.selectedIndex = 0;
+                    }
                 }
                 
                 // Sınıf değiştiğinde
                 panelSinif.onchange = () => {
-                    if (pageSinif) {
+                    if (pageSinif && panelSinif) {
                         pageSinif.value = panelSinif.value;
                         pageSinif.dispatchEvent(new Event('change', {bubbles: true}));
                         if (window.$ && window.$.fn && window.$.fn.select2) {
@@ -889,9 +928,12 @@
                         }
                     }
                     
-                    // Seçimi kaydet
-                    S.eokulSelectedSinif = panelSinif.value;
-                    save();
+                    // Seçimi güvenilir şekilde kaydet (hem value hem text)
+                    if (panelSinif && panelSinif.value) {
+                        S.eokulSelectedSinif = panelSinif.value;
+                        S.selectedSubeText = panelSinif.options[panelSinif.selectedIndex]?.text || '';
+                        save();
+                    }
                     
                     showLoader('Dersler yükleniyor...');
                     setTimeout(() => {
@@ -963,7 +1005,11 @@
             };
 
             // Kayıtlı dersi koru
-            if (panelDers.value) { S.eokulSelectedDers = panelDers.value; save(); }
+            if (panelDers.value) {
+                S.eokulSelectedDers = panelDers.value;
+                S.selectedDersText = panelDers.options[panelDers.selectedIndex]?.text || '';
+                save();
+            }
         } else {
             document.getElementById('ew-eokul-status').innerHTML = 
                 '⚠️ Ders listesi yüklenmedi. Sınıf seçimini kontrol edin.';
@@ -990,6 +1036,8 @@
         }
         
         S.eokulSelectedDers = panelDers.value;
+        S.eokulSelectedSinif = panelSinif.value;
+        S.selectedSubeText = panelSinif.options[panelSinif.selectedIndex]?.text || '';
         save();
         
         showLoader('Liste hazırlanıyor...');
@@ -998,7 +1046,9 @@
             pending: true,
             timestamp: Date.now(),
             sinif: panelSinif.value,
-            ders: panelDers.value
+            ders: panelDers.value,
+            subeText: panelSinif.options[panelSinif.selectedIndex]?.text || '',
+            dersText: panelDers.options[panelDers.selectedIndex]?.text || ''
         };
         localStorage.setItem(PENDING_KEY, JSON.stringify(pendingData));
         
@@ -1110,8 +1160,17 @@
             S.paused = false;
             S.currentIndex = -1;
             S.catRange = S.eokulRange || '1';
-            S.selectedSube = S.eokulSelectedSinif;
-            S.selectedDers = S.eokulSelectedDers;
+            // Sınıf ve dersi DOĞRUDAN sayfadan oku (panel onchange tetiklenmemiş olsa bile)
+            const _clearSubeEl = findSubeSel();
+            const _clearDersEl = findDersSel();
+            S.selectedSube = (_clearSubeEl && _clearSubeEl.value) ? _clearSubeEl.value : S.eokulSelectedSinif;
+            S.selectedSubeText = (_clearSubeEl && _clearSubeEl.selectedIndex >= 0)
+                ? (_clearSubeEl.options[_clearSubeEl.selectedIndex]?.text || '')
+                : (S.selectedSubeText || '');
+            S.selectedDers = (_clearDersEl && _clearDersEl.value) ? _clearDersEl.value : S.eokulSelectedDers;
+            S.selectedDersText = (_clearDersEl && _clearDersEl.selectedIndex >= 0)
+                ? (_clearDersEl.options[_clearDersEl.selectedIndex]?.text || '')
+                : (S.selectedDersText || '');
             S.autoStartList = true;
             
             save(); 
@@ -1153,8 +1212,21 @@
         
         S.currentIndex = -1; S.active = true; S.paused = false; S.mode = 'fill';
         S.catRange = S.eokulRange || '1';
-        S.selectedSube = S.eokulSelectedSinif; S.selectedDers = S.eokulSelectedDers;
+        
+        // Sınıf ve dersi DOĞRUDAN sayfadan oku (panel onchange tetiklenmemiş olsa bile)
+        const _pageSubeEl = findSubeSel();
+        const _pageDersEl = findDersSel();
+        S.selectedSube = (_pageSubeEl && _pageSubeEl.value) ? _pageSubeEl.value : S.eokulSelectedSinif;
+        S.selectedSubeText = (_pageSubeEl && _pageSubeEl.selectedIndex >= 0)
+            ? (_pageSubeEl.options[_pageSubeEl.selectedIndex]?.text || '')
+            : (S.selectedSubeText || '');
+        S.selectedDers = (_pageDersEl && _pageDersEl.value) ? _pageDersEl.value : S.eokulSelectedDers;
+        S.selectedDersText = (_pageDersEl && _pageDersEl.selectedIndex >= 0)
+            ? (_pageDersEl.options[_pageDersEl.selectedIndex]?.text || '')
+            : (S.selectedDersText || '');
         S.autoStartList = true;
+        
+        console.log('EW Extraction: Sube=', S.selectedSube, '/', S.selectedSubeText, ' Ders=', S.selectedDers, '/', S.selectedDersText);
         save();
         msg('✅ Veriler hazırlandı. Yönlendiriliyor...');
         setTimeout(() => { window.location.href = OOK_URL; }, 1000);
@@ -1412,8 +1484,8 @@
                 };
             };
         }
-        const pollSube = makePoller(() => document.getElementById('cmbSubeler'), 'ew-sube');
-        const pollDers = makePoller(() => document.getElementById('cmbBeceriler'), 'ew-ders');
+        const pollSube = makePoller(findSubeSel, 'ew-eokul-sinif');
+        const pollDers = makePoller(findDersSel, 'ew-eokul-ders');
         setInterval(() => { pollSube(); pollDers(); }, 1000);
     }
 
@@ -1427,24 +1499,65 @@
         // Hedef sayfada otonom landing (seçim + listeleme + başlama)
         if (IS_TARGET && S.active && (S.autoStartList || S.currentIndex === -1)) {
             showLoader('Sınıf ve ders otomatik seçiliyor...');
-            await wait(2000); 
-            
-            const subeEl = document.getElementById('cmbSubeler');
-            const dersEl = document.getElementById('cmbBeceriler');
-            
-            if (subeEl && S.selectedSube) {
-                subeEl.value = S.selectedSube;
-                subeEl.dispatchEvent(new Event('change', {bubbles:true}));
-                await wait(1200); 
+
+            // Element yüklenene ve option'ları dolana kadar polling ile bekle
+            const waitForSel = async (finder, label, maxMs = 8000) => {
+                const start = Date.now();
+                while (Date.now() - start < maxMs) {
+                    const el = finder();
+                    if (el && el.options.length > 1) return el;
+                    await wait(300);
+                }
+                console.warn('EW: ' + label + ' yüklenemedi, zaman aşımı.');
+                return null;
+            };
+
+            // Değer VEYA metin üzerinden akıllı eşleme (Text öncelikli - daha güvenilir)
+            const setValSmart = (el, val, text) => {
+                if (!el) return false;
+                // 1. Önce görüntü metniyle (text) eşle - farklı sayfalarda en güvenilir yöntem
+                if (text) {
+                    const optByText = [...el.options].find(o => o.text.trim() === text.trim());
+                    if (optByText) { el.value = optByText.value; return true; }
+                }
+                // 2. Doğrudan value ile dene
+                if (val) {
+                    el.value = val;
+                    if (el.value === val) return true;
+                    // 3. Value'nun baş kısmıyla eşle (prefix match)
+                    const optByVal = [...el.options].find(o =>
+                        o.value.toString().split('_')[0] === val.toString().split('_')[0]
+                    );
+                    if (optByVal) { el.value = optByVal.value; return true; }
+                }
+                return false;
+            };
+
+            const subeEl = await waitForSel(findSubeSel, 'Şube');
+            if (subeEl && (S.selectedSube || S.selectedSubeText)) {
+                if (setValSmart(subeEl, S.selectedSube, S.selectedSubeText)) {
+                    subeEl.dispatchEvent(new Event('change', {bubbles: true}));
+                    if (window.$?.fn?.select2 && $(subeEl).data('select2')) $(subeEl).trigger('change');
+                    await waitAjax(5);
+                    await wait(1000);
+                }
             }
-            
-            if (dersEl && S.selectedDers) {
-                dersEl.value = S.selectedDers;
-                dersEl.dispatchEvent(new Event('change', {bubbles:true}));
-                await wait(800);
+
+            // Sınıf seçiminden sonra ders listesi yeniden yüklenebilir, tekrar bekle
+            const dersEl = await waitForSel(findDersSel, 'Ders');
+            if (dersEl && (S.selectedDers || S.selectedDersText)) {
+                if (setValSmart(dersEl, S.selectedDers, S.selectedDersText)) {
+                    dersEl.dispatchEvent(new Event('change', {bubbles: true}));
+                    if (window.$?.fn?.select2 && $(dersEl).data('select2')) $(dersEl).trigger('change');
+                    await waitAjax(5);
+                    await wait(600);
+                }
             }
-            
-            const listBtn = document.querySelector('button.btn-primary.has-ripple') || document.getElementById('btnListele');
+
+            const listBtn =
+                document.querySelector('button.btn-primary.has-ripple') ||
+                document.getElementById('btnListele') ||
+                document.getElementById('btnSorgula');
             if (listBtn) {
                 listBtn.click();
                 S.autoStartList = false;
