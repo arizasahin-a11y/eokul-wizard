@@ -206,6 +206,38 @@
         }
     }
 
+    // Tam ekran overlay - e-okul sisteminin kesintili görüntüsünü gizler
+    function showFullScreenOverlay(text = 'İşlem devam ediyor...', subtext = '') {
+        let overlay = document.getElementById('ew-fullscreen-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'ew-fullscreen-overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);z-index:999999999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.3s;font-family:sans-serif;';
+            overlay.innerHTML = `
+                <div style="text-align:center;color:#f1f5f9;">
+                    <div style="width:64px;height:64px;border:4px solid #1e293b;border-top:4px solid #10b981;border-radius:50%;animation:ewSpin 1s linear infinite;margin:0 auto 24px;"></div>
+                    <div id="ew-overlay-text" style="font-size:20px;font-weight:700;margin-bottom:8px;color:#f1f5f9;">İşlem devam ediyor...</div>
+                    <div id="ew-overlay-subtext" style="font-size:14px;color:#94a3b8;"></div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+        const textEl = document.getElementById('ew-overlay-text');
+        const subtextEl = document.getElementById('ew-overlay-subtext');
+        if (textEl) textEl.textContent = text;
+        if (subtextEl) subtextEl.textContent = subtext;
+        overlay.style.display = 'flex';
+        setTimeout(() => { overlay.style.opacity = '1'; }, 10);
+    }
+
+    function hideFullScreenOverlay() {
+        const overlay = document.getElementById('ew-fullscreen-overlay');
+        if (overlay) {
+            overlay.style.opacity = '0';
+            setTimeout(() => { overlay.style.display = 'none'; }, 400);
+        }
+    }
+
     function autoModalClick() {
         if (!S.autoConfirm) return false;
         const modalContainers = document.querySelectorAll('.modal, .swal2-container, .sweet-alert, .ajs-dialog, .alert, [role="dialog"], .ui-dialog, .bootbox');
@@ -621,12 +653,10 @@
 
         if (triggerNav) {
             if (tabName === 'eokul' && !IS_EOKUL_LIST) {
-                msg('🌐 Not Giriş sayfasına yönlendiriliyor...');
-                showLoader('Yönlendiriliyor...');
+                showFullScreenOverlay('Not Giriş sayfasına yönlendiriliyor...', 'Lütfen bekleyin');
                 setTimeout(() => { window.location.href = 'https://e-okul.meb.gov.tr/OrtaOgretim/OKL/OOK07003.aspx'; }, 400);
             } else if (tabName === 'excel' && !IS_TARGET) {
-                msg('📊 Gelişim sayfasına yönlendiriliyor...');
-                showLoader('Yönlendiriliyor...');
+                showFullScreenOverlay('Gelişim sayfasına yönlendiriliyor...', 'Lütfen bekleyin');
                 setTimeout(() => { window.location.href = OOK_URL; }, 400);
             }
         }
@@ -822,6 +852,7 @@
 
         if (statusEl) statusEl.innerHTML = `✅ ${eokulData.length} öğrenci bulundu!<br><small>🔢 Sayı içeren sütunlar: ${colList}</small>`;
         hideLoader();
+        hideFullScreenOverlay(); // Tam ekran overlay'i gizle
     }
 
     if (IS_EOKUL_LIST) {
@@ -845,7 +876,7 @@
         
         // SADECE 'Listele' yapıldıysa otomatik tablo analizi yap
         if (shouldAnalyzeTable) {
-            showLoader('Liste analiz ediliyor...');
+            showFullScreenOverlay('Liste analiz ediliyor...', 'Öğrenci verileri işleniyor');
             setTimeout(() => {
                 analyzeTable();
             }, 1000);
@@ -920,6 +951,9 @@
                 
                 // Sınıf değiştiğinde
                 panelSinif.onchange = () => {
+                    // Tam ekran overlay göster - sayfa yenilenme sırasında kesintili görüntüyü gizle
+                    showFullScreenOverlay('Sınıf değiştiriliyor...', 'Dersler yükleniyor, lütfen bekleyin');
+                    
                     if (pageSinif && panelSinif) {
                         pageSinif.value = panelSinif.value;
                         pageSinif.dispatchEvent(new Event('change', {bubbles: true}));
@@ -935,7 +969,6 @@
                         save();
                     }
                     
-                    showLoader('Dersler yükleniyor...');
                     setTimeout(() => {
                         loadDersDropdown(false); // Kullanıcı kendi seçtiyse reload değildir
                     }, 1000);
@@ -1010,17 +1043,19 @@
                 S.selectedDersText = panelDers.options[panelDers.selectedIndex]?.text || '';
                 save();
             }
+            
+            // Overlay'i gizle - dersler yüklendi
+            hideFullScreenOverlay();
         } else {
             document.getElementById('ew-eokul-status').innerHTML = 
                 '⚠️ Ders listesi yüklenmedi. Sınıf seçimini kontrol edin.';
+            hideFullScreenOverlay();
         }
     }
 
     document.getElementById('ew-eokul-listele').onclick = async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        
-        msg('📋 Listele butonuna tıklandı!');
         
         const panelSinif = document.getElementById('ew-eokul-sinif');
         const panelDers = document.getElementById('ew-eokul-ders');
@@ -1040,7 +1075,8 @@
         S.selectedSubeText = panelSinif.options[panelSinif.selectedIndex]?.text || '';
         save();
         
-        showLoader('Liste hazırlanıyor...');
+        // Tam ekran overlay göster - e-okul sisteminin kesintili görüntüsünü gizle
+        showFullScreenOverlay('Liste hazırlanıyor...', 'Sayfa yenileniyor, lütfen bekleyin');
         
         const pendingData = {
             pending: true,
@@ -1052,8 +1088,6 @@
         };
         localStorage.setItem(PENDING_KEY, JSON.stringify(pendingData));
         
-        msg('📋 Listele butonuna tıklanıyor...');
-        
         const listeleBtn = document.getElementById('btnListele') || 
                            document.getElementById('btnSorgula') ||
                            document.querySelector('input[value="Listele"]') ||
@@ -1064,6 +1098,7 @@
                                .find(b => (b.value || b.textContent || '').toLowerCase().includes('listele'));
         
         if (!listeleBtn) {
+            hideFullScreenOverlay();
             msg('❌ Listele butonu bulunamadı, form denenecek...');
             const form = document.querySelector('form');
             if (form) {
@@ -1174,7 +1209,7 @@
             S.autoStartList = true;
             
             save(); 
-            msg('🧹 Temizleme ayarları kaydedildi. Yönlendiriliyor...');
+            showFullScreenOverlay('Temizleme ayarları kaydedildi', 'Gelişim sayfasına yönlendiriliyor...');
             setTimeout(() => { window.location.href = OOK_URL; }, 1000);
             return;
         }
@@ -1228,7 +1263,7 @@
         
         console.log('EW Extraction: Sube=', S.selectedSube, '/', S.selectedSubeText, ' Ders=', S.selectedDers, '/', S.selectedDersText);
         save();
-        msg('✅ Veriler hazırlandı. Yönlendiriliyor...');
+        showFullScreenOverlay('Veriler hazırlandı', 'Gelişim sayfasına yönlendiriliyor...');
         setTimeout(() => { window.location.href = OOK_URL; }, 1000);
     };
 
@@ -1354,7 +1389,7 @@
                 updateStartBtn();
                 
                 if (isEokul) {
-                    msg('✅ Tamamlandı. Not Girişi listesine dönülüyor...');
+                    showFullScreenOverlay('İşlem tamamlandı!', 'Not Girişi listesine dönülüyor...');
                     setTimeout(() => { window.location.href = 'https://e-okul.meb.gov.tr/OrtaOgretim/OKL/OOK07003.aspx'; }, 1500);
                 }
                 return;
@@ -1498,7 +1533,7 @@
         
         // Hedef sayfada otonom landing (seçim + listeleme + başlama)
         if (IS_TARGET && S.active && (S.autoStartList || S.currentIndex === -1)) {
-            showLoader('Sınıf ve ders otomatik seçiliyor...');
+            showFullScreenOverlay('Sınıf ve ders otomatik seçiliyor...', 'Otomasyon başlatılıyor');
 
             // Element yüklenene ve option'ları dolana kadar polling ile bekle
             const waitForSel = async (finder, label, maxMs = 8000) => {
@@ -1562,10 +1597,10 @@
                 listBtn.click();
                 S.autoStartList = false;
                 save();
-                msg('📋 Liste yüklendi, otomasyon başlıyor...');
+                showFullScreenOverlay('Liste yüklendi', 'Otomasyon başlıyor...');
                 await wait(2000);
             }
-            hideLoader();
+            hideFullScreenOverlay();
         }
         
         if (S.active && !S.paused && S.excelData.length > 0) {
